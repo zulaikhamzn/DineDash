@@ -1,0 +1,12 @@
+{% extends 'dinedashapp/components/login_base.html' %}
+
+{% block title %}DineDash - Log In{% endblock title %}
+
+{% block content %}
+<h1>What kind of user are you?</h1>
+<ul class="list-group">
+    <li class="list-group-item"><a href="{% url 'log_in_regular' %}">Regular Customer</a></li>
+    <li class="list-group-item"><a href="{% url 'log_in_restaurant' %}">Restaurant Staff</a></li>
+    <li class="list-group-item"><a href="{% url 'log_in_delivery' %}">Delivery Contractor</a></li>
+</ul>
+{% endblock content %}
