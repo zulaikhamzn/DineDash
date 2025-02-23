@@ -4,11 +4,16 @@ from django.urls import reverse_lazy
 from django.views.generic import FormView
 
 from dinedashapp.forms import LogInForm, RegistrationForm
-from dinedashapp.models import BlogPost
+from dinedashapp.models import BlogPost, MenuItem
 
 
 def index(request):
-    return render(request, "dinedashapp/index.html")
+    pricing_examples = MenuItem.objects.all()[:4]
+    return render(
+        request,
+        "dinedashapp/index.html",
+        {"pricing_examples": pricing_examples},
+    )
 
 
 def about_us(request):

@@ -69,3 +69,25 @@ class BlogPost(models.Model):
 
     def __str__(self):
         return str(self.title)
+
+    class Meta:
+        ordering = ["-date"]
+
+
+class Restaurant(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.CharField(max_length=1000)
+    hours_sunday = models.TimeField(null=True)
+    hours_monday = models.TimeField(null=True)
+    hours_tuesday = models.TimeField(null=True)
+    hours_wednesday = models.TimeField(null=True)
+    hours_thursday = models.TimeField(null=True)
+    hours_friday = models.TimeField(null=True)
+    hours_saturday = models.TimeField(null=True)
+
+
+class MenuItem(models.Model):
+    name = models.CharField(max_length=200)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    description = models.CharField(max_length=1000)
