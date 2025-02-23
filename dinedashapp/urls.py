@@ -5,8 +5,10 @@ from dinedashapp.views import (
     DeliveryRegistrationView,
     RegularLogInView,
     RegularRegistrationView,
+    RestaurantInfoView,
     RestaurantLogInView,
     RestaurantRegistrationView,
+    RestaurantSearchView,
     about_us,
     blog,
     contact_us,
@@ -38,4 +40,6 @@ urlpatterns = [
         name="register_delivery",
     ),
     path("log_out", log_out, name="log_out"),
+    path("order", RestaurantSearchView.as_view(), name="restaurant_search"),
+    path("restaurant/<int:pk>", RestaurantInfoView.as_view(), name="restaurant_info"),
 ]

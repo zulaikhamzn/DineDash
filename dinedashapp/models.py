@@ -36,8 +36,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     USER_TYPES = [("Reg", "Regular"), ("Res", "Restaurant"), ("Del", "Delivery")]
 
     email = models.EmailField("email address", blank=False, unique=True)
-    first_name = models.CharField("first name", max_length=150, blank=True)
-    last_name = models.CharField("last name", max_length=150, blank=True)
+    first_name = models.CharField("first name", max_length=150, blank=False)
+    last_name = models.CharField("last name", max_length=150, blank=False)
     is_active = models.BooleanField(
         "active",
         default=True,
@@ -75,7 +75,7 @@ class BlogPost(models.Model):
 
 
 class Restaurant(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, blank=False)
     description = models.CharField(max_length=1000)
     hours_sunday = models.TimeField(null=True)
     hours_monday = models.TimeField(null=True)
@@ -85,9 +85,23 @@ class Restaurant(models.Model):
     hours_friday = models.TimeField(null=True)
     hours_saturday = models.TimeField(null=True)
 
+    def __str__(self):
+        return str(self.name)
+
+    class Meta:
+        ordering = ["name"]
+
 
 class MenuItem(models.Model):
-    name = models.CharField(max_length=200)
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200, blank=False)
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name="menu_items"
+    )
     price = models.DecimalField(max_digits=6, decimal_places=2)
     description = models.CharField(max_length=1000)
+
+    def __str__(self):
+        return str(self.name)
+
+    class Meta:
+        ordering = ["name"]

@@ -1,10 +1,11 @@
 from django.contrib.auth import authenticate, login, logout
+from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import FormView
+from django.views.generic import DetailView, FormView, ListView
 
 from dinedashapp.forms import LogInForm, RegistrationForm
-from dinedashapp.models import BlogPost, MenuItem
+from dinedashapp.models import BlogPost, MenuItem, Restaurant
 
 
 def index(request):
@@ -96,3 +97,29 @@ class DeliveryRegistrationView(RegularRegistrationView):
 def log_out(request):
     logout(request)
     return redirect("index")
+
+
+class RestaurantSearchView(ListView):
+    template_name = "dinedashapp/restaurant_search.html"
+    context_object_name = "restaurants"
+
+    def get_context_data(self, **kwargs):
+        kwargs = super().get_context_data(**kwargs)
+        if query := self.request.GET.get("query"):
+            kwargs.update({"query": query})
+        return kwargs
+
+    def get_queryset(self):
+        if query := self.request.GET.get("query"):
+            query = query.strip().replace("  ", " ")
+            return Restaurant.objects.filter(
+                Q(name__icontains=query) | Q(description__icontains=query)
+            )
+        else:
+            return []
+
+
+class RestaurantInfoView(DetailView):
+    model = Restaurant
+    template_name = "dinedashapp/restaurant_info.html"
+    context_object_name = "restaurant"

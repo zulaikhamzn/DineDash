@@ -1,0 +1,27 @@
+{% extends 'dinedashapp/components/home_base.html' %}
+
+{% block title %}DineDash - Restaurant Search{% endblock title %}
+
+{% block content %}
+<div class="pricing">
+    <form class="search-bar-form">
+        <input type="text" placeholder="Search..." name="query" value="{{ query }}" />
+        <input type="submit" value="Search">
+    </form>
+</div>
+
+{% if query %}
+<div class="menu menu-vertical">
+    {% for restaurant in restaurants %}
+    <div class="menu-item">
+        <h4><a href="{% url 'restaurant_info' restaurant.pk %}">{{ restaurant.name }}</a></h4>
+        <p>{{ restaurant.description }}</p>
+    </div>
+    {% empty %}
+    <div class="menu-item">
+        <em>No items found</em>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock content %}

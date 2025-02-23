@@ -135,6 +135,10 @@
             font-weight: bold;
             margin-top: 30px;
         }
+
+        .center {
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -145,7 +149,7 @@
             <ul>
                 <li><a href="{% url 'index' %}">Home</a></li>
                 <li><a href="{% url 'about_us' %}">About Us</a></li>
-                <li><a href="#">Shop</a></li>
+                <li><a href="{% url 'restaurant_search' %}">Order</a></li>
                 <li><a href="{% url 'blog' %}">Blog</a></li>
                 <li><a href="{% url 'contact_us' %}">Contact Us</a></li>
             </ul>
