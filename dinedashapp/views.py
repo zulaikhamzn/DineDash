@@ -1,11 +1,33 @@
-from django.shortcuts import render
-from django.views.generic import FormView
+from django.contrib.auth import authenticate, login, logout
+from django.db.models import Q
+from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
+from django.views.generic import DetailView, FormView, ListView
 
-from dinedashapp.forms import LogInForm
+from dinedashapp.forms import LogInForm, RegistrationForm
+from dinedashapp.models import BlogPost, MenuItem, Restaurant
 
 
 def index(request):
-    return render(request, "dinedashapp/index.html")
+    pricing_examples = MenuItem.objects.all()[:4]
+    return render(
+        request,
+        "dinedashapp/index.html",
+        {"pricing_examples": pricing_examples},
+    )
+
+
+def about_us(request):
+    return render(request, "dinedashapp/about_us.html")
+
+
+def contact_us(request):
+    return render(request, "dinedashapp/contact_us.html")
+
+
+def blog(request):
+    posts = BlogPost.objects.all()
+    return render(request, "dinedashapp/blog.html", {"blog_posts": posts})
 
 
 def log_in_question(request):
@@ -15,12 +37,89 @@ def log_in_question(request):
 class RegularLogInView(FormView):
     template_name = "dinedashapp/log_in_form.html"
     form_class = LogInForm
-    extra_context = {"title": "Regular Customer Log In"}
+    extra_context = {
+        "title": "Regular Customer Log In",
+        "registration_url": reverse_lazy("register_regular"),
+    }
+
+    def form_valid(self, form):
+        login(self.request, form.user)
+        return redirect("index")
 
 
 class RestaurantLogInView(RegularLogInView):
-    extra_context = {"title": "Restaurant Log In"}
+    extra_context = {
+        "title": "Restaurant Log In",
+        "registration_url": reverse_lazy("register_restaurant"),
+    }
 
 
 class DeliveryLogInView(RegularLogInView):
-    extra_context = {"title": "Delivery Log In"}
+    extra_context = {
+        "title": "Delivery Log In",
+        "registration_url": reverse_lazy("register_delivery"),
+    }
+
+
+class RegularRegistrationView(FormView):
+    template_name = "dinedashapp/registration_form.html"
+    form_class = RegistrationForm
+    extra_context = {
+        "title": "Regular Customer Registration",
+        "log_in_url": reverse_lazy("log_in_regular"),
+    }
+
+    def form_valid(self, form):
+        form.save()
+
+        email = form.cleaned_data["email"]
+        password = form.cleaned_data["password1"]
+
+        user = authenticate(email=email, password=password)
+        login(self.request, user)
+        return redirect("index")
+
+
+class RestaurantRegistrationView(RegularRegistrationView):
+    extra_context = {
+        "title": "Restaurant Registration",
+        "log_in_url": reverse_lazy("log_in_restaurant"),
+    }
+
+
+class DeliveryRegistrationView(RegularRegistrationView):
+    extra_context = {
+        "title": "Delivery Registration",
+        "log_in_url": reverse_lazy("log_in_delivery"),
+    }
+
+
+def log_out(request):
+    logout(request)
+    return redirect("index")
+
+
+class RestaurantSearchView(ListView):
+    template_name = "dinedashapp/restaurant_search.html"
+    context_object_name = "restaurants"
+
+    def get_context_data(self, **kwargs):
+        kwargs = super().get_context_data(**kwargs)
+        if query := self.request.GET.get("query"):
+            kwargs.update({"query": query})
+        return kwargs
+
+    def get_queryset(self):
+        if query := self.request.GET.get("query"):
+            query = query.strip().replace("  ", " ")
+            return Restaurant.objects.filter(
+                Q(name__icontains=query) | Q(description__icontains=query)
+            )
+        else:
+            return []
+
+
+class RestaurantInfoView(DetailView):
+    model = Restaurant
+    template_name = "dinedashapp/restaurant_info.html"
+    context_object_name = "restaurant"

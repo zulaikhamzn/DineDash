@@ -1,0 +1,21 @@
+{% extends 'dinedashapp/components/home_base.html' %}
+
+{% block title %}DineDash - Restaurant Info{% endblock title %}
+
+{% block content %}
+<h2 class="menu-header">{{ restaurant.name }}</h2>
+<p class="center">{{ restaurant.description }}</p>
+<div class="menu">
+    {% for menu_item in restaurant.menu_items.all %}
+    <div class="menu-item">
+        <h4>{{ menu_item.name }}</h4>
+        <p><em>${{ menu_item.price }}</em></p>
+        <p>{{ menu_item.description }}</p>
+    </div>
+    {% empty %}
+    <div class="menu-item">
+        <em>This restaurant has no menu items at this time.</em>
+    </div>
+    {% endfor %}
+</div>
+{% endblock content %}
