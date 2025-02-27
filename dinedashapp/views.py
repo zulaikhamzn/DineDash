@@ -123,3 +123,45 @@ class RestaurantInfoView(DetailView):
     model = Restaurant
     template_name = "dinedashapp/restaurant_info.html"
     context_object_name = "restaurant"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = self.get_object()
+
+        context["sunday_hours"] = (
+            f"{obj.open_hour_sunday.strftime("%I:%M %p").lstrip("0")} to {obj.close_hour_sunday.strftime("%I:%M %p").lstrip("0")}"
+            if obj.open_hour_sunday is not None
+            else "closed"
+        )
+        context["monday_hours"] = (
+            f"{obj.open_hour_monday.strftime("%I:%M %p").lstrip("0")} to {obj.close_hour_monday.strftime("%I:%M %p").lstrip("0")}"
+            if obj.open_hour_monday is not None
+            else "closed"
+        )
+        context["tuesday_hours"] = (
+            f"{obj.open_hour_tuesday.strftime("%I:%M %p").lstrip("0")} to {obj.close_hour_tuesday.strftime("%I:%M %p").lstrip("0")}"
+            if obj.open_hour_tuesday is not None
+            else "closed"
+        )
+        context["wednesday_hours"] = (
+            f"{obj.open_hour_wednesday.strftime("%I:%M %p").lstrip("0")} to {obj.close_hour_wednesday.strftime("%I:%M %p").lstrip("0")}"
+            if obj.open_hour_wednesday is not None
+            else "closed"
+        )
+        context["thursday_hours"] = (
+            f"{obj.open_hour_thursday.strftime("%I:%M %p").lstrip("0")} to {obj.close_hour_thursday.strftime("%I:%M %p").lstrip("0")}"
+            if obj.open_hour_thursday is not None
+            else "closed"
+        )
+        context["friday_hours"] = (
+            f"{obj.open_hour_friday.strftime("%I:%M %p").lstrip("0")} to {obj.close_hour_friday.strftime("%I:%M %p").lstrip("0")}"
+            if obj.open_hour_friday is not None
+            else "closed"
+        )
+        context["saturday_hours"] = (
+            f"{obj.open_hour_saturday.strftime("%I:%M %p").lstrip("0")} to {obj.close_hour_saturday.strftime("%I:%M %p").lstrip("0")}"
+            if obj.open_hour_saturday is not None
+            else "closed"
+        )
+
+        return context
