@@ -15,14 +15,23 @@
         <p>Thursday: {{ thursday_hours }}</p>
         <p>Friday: {{ friday_hours }}</p>
         <p>Saturday: {{ saturday_hours }}</p>
+        {% if is_owner %}
+        <p><a href="{% url 'edit_restaurant_info' restaurant.pk %}">Edit</a></p>
+        {% endif %}
     </div>
 </div>
 <div class="menu">
+    {% if is_owner %}
+    <p><a href="{% url 'create_menu_item' %}">Add item</a></p>
+    {% endif %}
     {% for menu_item in restaurant.menu_items.all %}
     <div class="menu-item">
         <h3>{{ menu_item.name }}</h3>
         <p><em>${{ menu_item.price }}</em></p>
         <p>{{ menu_item.description }}</p>
+        {% if is_owner %}
+        <p><a href="{% url 'edit_menu_item' menu_item.pk %}">Edit</a></p>
+        {% endif %}
     </div>
     {% empty %}
     <div class="menu-item">

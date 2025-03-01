@@ -33,11 +33,9 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
-    USER_TYPES = [("Reg", "Regular"), ("Res", "Restaurant"), ("Del", "Delivery")]
+    USER_TYPES = (("Reg", "Regular"), ("Res", "Restaurant"), ("Del", "Delivery"))
 
-    email = models.EmailField("email address", blank=False, unique=True)
-    first_name = models.CharField("first name", max_length=150, blank=False)
-    last_name = models.CharField("last name", max_length=150, blank=False)
+    email = models.EmailField("email address", unique=True)
     is_active = models.BooleanField(
         "active",
         default=True,
@@ -54,6 +52,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "email"
 
     user_type = models.CharField(max_length=3, choices=USER_TYPES, default="Regular")
+
+
+class CustomerInfo(models.Model):
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="customer_info"
+    )
+
+    first_name = models.CharField("first name", max_length=150)
+    last_name = models.CharField("last name", max_length=150)
 
     def get_full_name(self):
         """
@@ -75,7 +82,7 @@ class BlogPost(models.Model):
 
 
 class Restaurant(models.Model):
-    name = models.CharField(max_length=200, blank=False)
+    name = models.CharField(max_length=200)
     description = models.CharField(max_length=1000)
     open_hour_sunday = models.TimeField(null=True)
     open_hour_monday = models.TimeField(null=True)
@@ -91,6 +98,9 @@ class Restaurant(models.Model):
     close_hour_thursday = models.TimeField(null=True)
     close_hour_friday = models.TimeField(null=True)
     close_hour_saturday = models.TimeField(null=True)
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="restaurant"
+    )
 
     def __str__(self):
         return str(self.name)
@@ -167,7 +177,7 @@ class Restaurant(models.Model):
 
 
 class MenuItem(models.Model):
-    name = models.CharField(max_length=200, blank=False)
+    name = models.CharField(max_length=200)
     restaurant = models.ForeignKey(
         Restaurant, on_delete=models.CASCADE, related_name="menu_items"
     )

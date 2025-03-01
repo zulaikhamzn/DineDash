@@ -1,8 +1,11 @@
 from django.urls import path
 
 from dinedashapp.views import (
+    CreateMenuItemView,
     DeliveryLogInView,
     DeliveryRegistrationView,
+    EditMenuItemView,
+    EditRestaurantInfoView,
     RegularLogInView,
     RegularRegistrationView,
     RestaurantInfoView,
@@ -42,4 +45,11 @@ urlpatterns = [
     path("log_out", log_out, name="log_out"),
     path("order", RestaurantSearchView.as_view(), name="restaurant_search"),
     path("restaurant/<int:pk>", RestaurantInfoView.as_view(), name="restaurant_info"),
+    path(
+        "restaurant/<int:pk>/edit",
+        EditRestaurantInfoView.as_view(),
+        name="edit_restaurant_info",
+    ),
+    path("menu/create", CreateMenuItemView.as_view(), name="create_menu_item"),
+    path("menu/edit/<int:pk>", EditMenuItemView.as_view(), name="edit_menu_item"),
 ]

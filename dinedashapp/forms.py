@@ -23,10 +23,12 @@ class LogInForm(forms.Form):
             raise ValidationError("Email and password are incorrect.")
 
 
-class RegistrationForm(BaseUserCreationForm):
+class AbstractUserCreationForm(BaseUserCreationForm):
+    user_type = forms.CharField(widget=forms.HiddenInput(), required=False)
+
     class Meta:
         model = User
-        fields = ("email", "first_name", "last_name")
+        fields = ("email", "user_type")
 
     def clean_email(self):
         """Reject emails that differ only in case."""
@@ -34,3 +36,46 @@ class RegistrationForm(BaseUserCreationForm):
         if email and User.objects.filter(email__iexact=email).exists():
             raise ValidationError("A user with this email address already exists.")
         return email
+
+    def __init__(self, *args, **kwargs):
+        hidden_value = kwargs.pop("user_type", "Reg")
+        super().__init__(*args, **kwargs)
+        self.fields["user_type"].initial = hidden_value
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.hidden_field = self.cleaned_data["user_type"]
+        if commit:
+            user.save()
+        return user
+
+
+class RegularUserRegistrationForm(AbstractUserCreationForm):
+    first_name = forms.CharField(max_length=150)
+    last_name = forms.CharField(max_length=150)
+
+
+class RestaurantRegistrationForm(AbstractUserCreationForm):
+    restaurant_name = forms.CharField(max_length=200)
+    description = forms.CharField(max_length=1000)
+
+
+# class RestaurantHoursForm(forms.ModelForm):
+#     class Meta:
+#         model = Restaurant
+#         fields = (
+#             "open_hour_sunday",
+#             "close_hour_sunday",
+#             "open_hour_monday",
+#             "close_hour_monday",
+#             "open_hour_tuesday",
+#             "close_hour_tuesday",
+#             "open_hour_wednesday",
+#             "close_hour_wednesday",
+#             "open_hour_thursday",
+#             "close_hour_thursday",
+#             "open_hour_friday",
+#             "close_hour_friday",
+#             "open_hour_saturday",
+#             "close_hour_saturday",
+#         )
