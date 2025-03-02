@@ -19,32 +19,16 @@
 <div class="menu-header">Some Delicious Examples</div>
 
 <section class="menu">
-    <section class="menu">
-        <div class="menu-item">
-            <h3>Mexican Pizza</h3>
-            <p>Food is any substance consumed to provide nutritional support for an organism.</p>
-        </div>
-        <div class="menu-item">
-            <h3>Soft Drinks</h3>
-            <p>Food is any substance consumed to provide nutritional support for an organism.</p>
-        </div>
-        <div class="menu-item">
-            <h3>French Fry</h3>
-            <p>Food is any substance consumed to provide nutritional support for an organism.</p>
-        </div>
-        <div class="menu-item">
-            <h3>Burgers</h3>
-            <p>Food is any substance consumed to provide nutritional support for an organism.</p>
-        </div>
-    </section>
-</section>
-
-<section class="pricing">
     {% for item in pricing_examples %}
-    <div class="food-item">
-        <h4>{{ item.name }}</h4>
-        <p>{{ item.price }}</p>
+    <div class="menu-item">
+        <h3>{{ item.name }}</h3>
+        <p>${{ item.price }}</p>
         <p>{{ item.description }}</p>
+    </div>
+    {% empty %}
+    <div class="menu-item">
+        <h3>{{ item.name }}</h3>
+        <p><em>There are no foods at the moment.</em></p>
     </div>
     {% endfor %}
 </section>

@@ -1,0 +1,93 @@
+{% extends 'dinedashapp/components/home_base.html' %}
+
+{% block title %}DineDash - Edit Restaurant Info{% endblock title %}
+
+{% block content %}
+<div class="menu">
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <ul>
+            {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {{ form.description.label_tag }}
+        {{ form.description }}
+
+        <p>
+            {{ form.open_hour_sunday.label_tag }}
+            {{ form.open_hour_sunday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+        <p>
+            {{ form.close_hour_sunday.label_tag }}
+            {{ form.close_hour_sunday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+        <p>
+            {{ form.open_hour_monday.label_tag }}
+            {{ form.open_hour_monday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+        {{ form.close_hour_monday.label_tag }}
+        {{ form.close_hour_monday }}
+        <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        <p>
+            {{ form.open_hour_tuesday.label_tag }}
+            {{ form.open_hour_tuesday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+        <p>
+            {{ form.close_hour_tuesday.label_tag }}
+            {{ form.close_hour_tuesday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+        <p>
+            {{ form.open_hour_wednesday.label_tag }}
+            {{ form.open_hour_wednesday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+        <p>
+            {{ form.close_hour_wednesday.label_tag }}
+            {{ form.close_hour_wednesday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+        <p>
+            {{ form.open_hour_thursday.label_tag }}
+            {{ form.open_hour_thursday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+        <p>
+            {{ form.close_hour_thursday.label_tag }}
+            {{ form.close_hour_thursday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+        <p>
+            {{ form.open_hour_friday.label_tag }}
+            {{ form.open_hour_friday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+        <p>
+            {{ form.close_hour_friday.label_tag }}
+            {{ form.close_hour_friday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+        <p>
+            {{ form.open_hour_saturday.label_tag }}
+            {{ form.open_hour_saturday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+        <p>
+            {{ form.close_hour_saturday.label_tag }}
+            {{ form.close_hour_saturday }}
+            <button type="button" onclick="this.previousElementSibling.value=''">Clear</button>
+        </p>
+
+        <input class="btn btn-primary" type="submit" value="Submit">
+    </form>
+</div>
+{% endblock content %}
