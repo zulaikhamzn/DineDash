@@ -156,9 +156,15 @@
             <div>
                 <button class="reservation">Reservation</button>
                 {% if user.is_authenticated %}
-                {% if user.user_type == "Reg" %}
-                <span style="color: white">Signed in as {{ user.customer_info.get_full_name }}</span>
-                {% endif %}
+                <span style="color: white">
+                    {% if user.user_type == "Reg" %}
+                    Signed in as {{ user.customer_info.get_full_name }}
+                    {% elif user.user_type == "Res" %}
+                    Signed in as {{ user.restaurant.name }}
+                    {% else %}
+                    Signed in as {{ user.delivery_contractor_info.get_full_name }}
+                    {% endif %}
+                </span>
                 <a href="{% url 'log_out' %}" class="reservation">Log out</a>
                 {% else %}
                 <a href="{% url 'log_in_question' %}" class="reservation">Log in</a>

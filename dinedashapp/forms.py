@@ -60,22 +60,5 @@ class RestaurantRegistrationForm(AbstractUserCreationForm):
     description = forms.CharField(max_length=1000)
 
 
-# class RestaurantHoursForm(forms.ModelForm):
-#     class Meta:
-#         model = Restaurant
-#         fields = (
-#             "open_hour_sunday",
-#             "close_hour_sunday",
-#             "open_hour_monday",
-#             "close_hour_monday",
-#             "open_hour_tuesday",
-#             "close_hour_tuesday",
-#             "open_hour_wednesday",
-#             "close_hour_wednesday",
-#             "open_hour_thursday",
-#             "close_hour_thursday",
-#             "open_hour_friday",
-#             "close_hour_friday",
-#             "open_hour_saturday",
-#             "close_hour_saturday",
-#         )
+class DeliveryContractorRegistrationForm(RegularUserRegistrationForm):
+    pass

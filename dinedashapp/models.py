@@ -189,3 +189,18 @@ class MenuItem(models.Model):
 
     class Meta:
         ordering = ["name"]
+
+
+class DeliveryContractorInfo(models.Model):
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="delivery_contractor_info"
+    )
+
+    first_name = models.CharField("first name", max_length=150)
+    last_name = models.CharField("last name", max_length=150)
+
+    def get_full_name(self):
+        """
+        Return the first_name plus the last_name, with a space in between.
+        """
+        return f"{self.first_name} {self.last_name}".strip()

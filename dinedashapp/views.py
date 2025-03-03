@@ -8,11 +8,18 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DetailView, FormView, ListView, UpdateView
 
 from dinedashapp.forms import (
+    DeliveryContractorRegistrationForm,
     LogInForm,
     RegularUserRegistrationForm,
     RestaurantRegistrationForm,
 )
-from dinedashapp.models import BlogPost, CustomerInfo, MenuItem, Restaurant
+from dinedashapp.models import (
+    BlogPost,
+    CustomerInfo,
+    DeliveryContractorInfo,
+    MenuItem,
+    Restaurant,
+)
 
 
 def redirect_if_not_target(target=None):
@@ -84,7 +91,7 @@ class RestaurantLogInView(RegularLogInView):
 
 class DeliveryLogInView(RegularLogInView):
     extra_context = {
-        "title": "Delivery Log In",
+        "title": " Contractor Log In",
         "registration_url": reverse_lazy("register_delivery"),
     }
 
@@ -144,12 +151,32 @@ class RestaurantRegistrationView(RegularRegistrationView):
         return redirect("restaurant_info", pk=restaurant.pk)
 
 
-class DeliveryRegistrationView(RegularRegistrationView):
+class DeliveryRegistrationView(FormView):
+    template_name = "dinedashapp/registration_form.html"
+    form_class = DeliveryContractorRegistrationForm
     extra_context = {
-        "title": "Delivery Registration",
+        "title": "Delivery Contractor Registration",
         "log_in_url": reverse_lazy("log_in_delivery"),
     }
     initial = {"user_type": "Del"}
+
+    def form_valid(self, form):
+        form.save()
+
+        email = form.cleaned_data["email"]
+        password = form.cleaned_data["password1"]
+
+        first_name = form.cleaned_data["first_name"]
+        last_name = form.cleaned_data["last_name"]
+
+        user = authenticate(email=email, password=password)
+
+        DeliveryContractorInfo.objects.create(
+            user=user, first_name=first_name, last_name=last_name
+        )
+
+        login(self.request, user)
+        return redirect("index")
 
 
 def log_out(request):
