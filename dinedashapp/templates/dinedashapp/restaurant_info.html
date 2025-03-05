@@ -7,6 +7,9 @@
 <p class="center">{{ restaurant.description }}</p>
 <div class="menu">
     <div class="menu-item">
+        {% if is_owner %}
+        <p><a href="{% url 'edit_restaurant_info' restaurant.pk %}">Edit</a></p>
+        {% endif %}
         <h4>Hours</h4>
         <p>Sunday: {{ sunday_hours }}</p>
         <p>Monday: {{ monday_hours }}</p>
@@ -15,9 +18,13 @@
         <p>Thursday: {{ thursday_hours }}</p>
         <p>Friday: {{ friday_hours }}</p>
         <p>Saturday: {{ saturday_hours }}</p>
-        {% if is_owner %}
-        <p><a href="{% url 'edit_restaurant_info' restaurant.pk %}">Edit</a></p>
+        <h4>Ratings and Reviews</h4>
+        {% if average_rating %}
+        <p>Rated {{ average_rating }} out of 5</p>
+        {% else %}
+        <p>This restaurant has not received any reviews yet.</p>
         {% endif %}
+        <p>Click <a href="{% url 'restaurant_reviews' restaurant.id %}">here</a> to see reviews or write a review.</p>
     </div>
 </div>
 <div class="menu">

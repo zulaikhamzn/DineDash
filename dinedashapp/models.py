@@ -3,7 +3,9 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin,
 )
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Avg
 from django.utils import timezone
 
 
@@ -105,6 +107,9 @@ class Restaurant(models.Model):
     def __str__(self):
         return str(self.name)
 
+    def get_average_rating(self):
+        self.reviews.aggregate(Avg("rating"))
+
     class Meta:
         ordering = ["name"]
 
@@ -189,6 +194,23 @@ class MenuItem(models.Model):
 
     class Meta:
         ordering = ["name"]
+
+
+class RestaurantReview(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="restaurant_reviews"
+    )
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name="reviews"
+    )
+    rating = models.IntegerField(
+        "rating out of 5", validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    description = models.CharField(max_length=200)
+    date_created = models.DateTimeField("date created", default=timezone.now)
+
+    class Meta:
+        ordering = ["-date_created"]
 
 
 class DeliveryContractorInfo(models.Model):

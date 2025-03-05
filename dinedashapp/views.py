@@ -19,6 +19,7 @@ from dinedashapp.models import (
     DeliveryContractorInfo,
     MenuItem,
     Restaurant,
+    RestaurantReview,
 )
 
 
@@ -191,7 +192,7 @@ class RestaurantSearchView(ListView):
     def get_context_data(self, **kwargs):
         kwargs = super().get_context_data(**kwargs)
         if query := self.request.GET.get("query"):
-            kwargs.update({"query": query})
+            kwargs["query"] = query
         return kwargs
 
     def get_queryset(self):
@@ -254,6 +255,8 @@ class RestaurantInfoView(DetailView):
             if obj.open_hour_saturday is not None
             else "closed"
         )
+
+        context["average_rating"] = obj.get_average_rating()
 
         return context
 
@@ -325,3 +328,37 @@ class EditRestaurantInfoView(UpdateView):
                 )
                 return self.form_invalid(form)
             raise e
+
+
+class ListOfReviewsView(ListView):
+    template_name = "dinedashapp/reviews_list.html"
+    context_object_name = "reviews"
+
+    def get_queryset(self):
+        return RestaurantReview.objects.filter(
+            restaurant__pk=self.kwargs["restaurant_id"]
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["restaurant"] = Restaurant.objects.get(pk=self.kwargs["restaurant_id"])
+        return context
+
+
+class CreateReviewView(CreateView):
+    model = RestaurantReview
+    fields = ("rating", "description")
+    template_name = "dinedashapp/restaurant_review_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["restaurant_id"] = self.kwargs["restaurant_id"]
+        return context
+
+    def form_valid(self, form):
+        obj = form.save(False)
+        restaurant_id = self.kwargs["restaurant_id"]
+        obj.restaurant_id = restaurant_id
+        obj.user = self.request.user
+        obj.save()
+        return redirect("restaurant_reviews", restaurant_id)

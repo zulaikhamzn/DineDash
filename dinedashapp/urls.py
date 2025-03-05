@@ -2,10 +2,12 @@ from django.urls import path
 
 from dinedashapp.views import (
     CreateMenuItemView,
+    CreateReviewView,
     DeliveryLogInView,
     DeliveryRegistrationView,
     EditMenuItemView,
     EditRestaurantInfoView,
+    ListOfReviewsView,
     RegularLogInView,
     RegularRegistrationView,
     RestaurantInfoView,
@@ -49,6 +51,16 @@ urlpatterns = [
         "restaurant/<int:pk>/edit",
         EditRestaurantInfoView.as_view(),
         name="edit_restaurant_info",
+    ),
+    path(
+        "restaurant/<int:restaurant_id>/reviews",
+        ListOfReviewsView.as_view(),
+        name="restaurant_reviews",
+    ),
+    path(
+        "restaurant/<int:restaurant_id>/reviews/create",
+        CreateReviewView.as_view(),
+        name="create_restaurant_review",
     ),
     path("menu/create", CreateMenuItemView.as_view(), name="create_menu_item"),
     path("menu/edit/<int:pk>", EditMenuItemView.as_view(), name="edit_menu_item"),
