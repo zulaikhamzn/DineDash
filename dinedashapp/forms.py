@@ -2,8 +2,10 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import BaseUserCreationForm
 from django.core.exceptions import ValidationError
+from geopy.exc import GeopyError
 
-from dinedashapp.models import User
+from dinedashapp.geo import get_coordinates
+from dinedashapp.models import CustomerInfo, DeliveryContractorInfo, Restaurant, User
 
 
 class LogInForm(forms.Form):
@@ -53,12 +55,132 @@ class AbstractUserCreationForm(BaseUserCreationForm):
 class RegularUserRegistrationForm(AbstractUserCreationForm):
     first_name = forms.CharField(max_length=150)
     last_name = forms.CharField(max_length=150)
+    location = forms.CharField(label="Your location", max_length=300, required=False)
+
+    def clean(self):
+        location = self.cleaned_data["location"]
+        try:
+            [x, y] = get_coordinates(location)
+            self.cleaned_data["location_x_coordinate"] = x
+            self.cleaned_data["location_y_coordinate"] = y
+        except GeopyError as e:
+            raise ValidationError("Could not findlocation.") from e
+
+    def save(self, commit=True):
+        user = super().save(commit)
+        if commit:
+            CustomerInfo.objects.create(
+                user=user,
+                first_name=self.cleaned_data["first_name"],
+                last_name=self.cleaned_data["last_name"],
+                location=(location := self.cleaned_data.get("location")),
+                location_x_coordinate=(
+                    self.cleaned_data["location_x_coordinate"] if location else None
+                ),
+                location_y_coordinate=(
+                    self.cleaned_data["location_y_coordinate"] if location else None
+                ),
+            )
+        return user
 
 
 class RestaurantRegistrationForm(AbstractUserCreationForm):
     restaurant_name = forms.CharField(max_length=200)
     description = forms.CharField(max_length=1000)
+    location = forms.CharField(max_length=300)
+
+    def clean(self):
+        location = self.cleaned_data["location"]
+        try:
+            [x, y] = get_coordinates(location)
+            self.cleaned_data["location_x_coordinate"] = x
+            self.cleaned_data["location_y_coordinate"] = y
+        except GeopyError as e:
+            raise ValidationError("Could not findlocation.") from e
+
+    def save(self, commit=True):
+        user = super().save(commit)
+        if commit:
+            Restaurant.objects.create(
+                user=user,
+                name=self.cleaned_data["restaurant_name"],
+                description=self.cleaned_data["description"],
+                location=(location := self.cleaned_data["location"]),
+                location_x_coordinate=(
+                    self.cleaned_data["location_x_coordinate"] if location else None
+                ),
+                location_y_coordinate=(
+                    self.cleaned_data["location_y_coordinate"] if location else None
+                ),
+            )
+        return user
 
 
-class DeliveryContractorRegistrationForm(RegularUserRegistrationForm):
-    pass
+class DeliveryContractorRegistrationForm(AbstractUserCreationForm):
+    first_name = forms.CharField(max_length=150)
+    last_name = forms.CharField(max_length=150)
+
+    def save(self, commit=True):
+        user = super().save(commit)
+        if commit:
+            DeliveryContractorInfo.objects.create(
+                user=user,
+                first_name=self.cleaned_data["first_name"],
+                last_name=self.cleaned_data["last_name"],
+            )
+        return user
+
+
+class RestaurantInfoForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            if "_hour_" in field_name:
+                field.required = False
+
+    def clean(self):
+        super().clean()
+        for day in (
+            "sunday",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+        ):
+            if bool(self.cleaned_data["open_hour_" + day]) != bool(
+                self.cleaned_data["close_hour_" + day]
+            ):
+                raise ValidationError(
+                    "If you entered an opening time for a day of the week, make sure to also specify a closing time for said day."
+                )
+
+            location = self.cleaned_data["location"]
+            try:
+                [x, y] = get_coordinates(location)
+                self.cleaned_data["location_x_coordinate"] = x
+                self.cleaned_data["location_y_coordinate"] = y
+            except GeopyError as e:
+                raise ValidationError("Could not findlocation.") from e
+
+    class Meta:
+        model = Restaurant
+        fields = (
+            "description",
+            "location",
+            "open_hour_sunday",
+            "close_hour_sunday",
+            "open_hour_monday",
+            "close_hour_monday",
+            "open_hour_tuesday",
+            "close_hour_tuesday",
+            "open_hour_wednesday",
+            "close_hour_wednesday",
+            "open_hour_thursday",
+            "close_hour_thursday",
+            "open_hour_friday",
+            "close_hour_friday",
+            "open_hour_saturday",
+            "close_hour_saturday",
+        )

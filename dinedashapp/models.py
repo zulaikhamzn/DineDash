@@ -63,6 +63,13 @@ class CustomerInfo(models.Model):
 
     first_name = models.CharField("first name", max_length=150)
     last_name = models.CharField("last name", max_length=150)
+    location = models.CharField("defaultlocation", max_length=300, null=True)
+    location_x_coordinate = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True
+    )
+    location_y_coordinate = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True
+    )
 
     def get_full_name(self):
         """
@@ -103,12 +110,15 @@ class Restaurant(models.Model):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="restaurant"
     )
+    location = models.CharField("location", max_length=300)
+    location_x_coordinate = models.DecimalField(max_digits=10, decimal_places=7)
+    location_y_coordinate = models.DecimalField(max_digits=10, decimal_places=7)
 
     def __str__(self):
         return str(self.name)
 
     def get_average_rating(self):
-        self.reviews.aggregate(Avg("rating"))
+        return self.reviews.aggregate(Avg("rating")).get("rating__avg")
 
     class Meta:
         ordering = ["name"]

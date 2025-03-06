@@ -5,6 +5,7 @@
 {% block content %}
 <h2 class="menu-header">{{ restaurant.name }}</h2>
 <p class="center">{{ restaurant.description }}</p>
+<p class="center">Located at {{ restaurant.location }}</p>
 <div class="menu">
     <div class="menu-item">
         {% if is_owner %}

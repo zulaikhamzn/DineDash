@@ -1,8 +1,7 @@
 from functools import wraps
 
 from django.contrib.auth import authenticate, login, logout
-from django.db import IntegrityError
-from django.db.models import Q
+from django.db.models import Avg, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DetailView, FormView, ListView, UpdateView
@@ -11,16 +10,11 @@ from dinedashapp.forms import (
     DeliveryContractorRegistrationForm,
     LogInForm,
     RegularUserRegistrationForm,
+    RestaurantInfoForm,
     RestaurantRegistrationForm,
 )
-from dinedashapp.models import (
-    BlogPost,
-    CustomerInfo,
-    DeliveryContractorInfo,
-    MenuItem,
-    Restaurant,
-    RestaurantReview,
-)
+from dinedashapp.geo import get_distance_in_miles
+from dinedashapp.models import BlogPost, MenuItem, Restaurant, RestaurantReview
 
 
 def redirect_if_not_target(target=None):
@@ -112,14 +106,7 @@ class RegularRegistrationView(FormView):
         email = form.cleaned_data["email"]
         password = form.cleaned_data["password1"]
 
-        first_name = form.cleaned_data["first_name"]
-        last_name = form.cleaned_data["last_name"]
-
         user = authenticate(email=email, password=password)
-
-        CustomerInfo.objects.create(
-            user=user, first_name=first_name, last_name=last_name
-        )
 
         login(self.request, user)
         return redirect("index")
@@ -139,17 +126,10 @@ class RestaurantRegistrationView(RegularRegistrationView):
         email = form.cleaned_data["email"]
         password = form.cleaned_data["password1"]
 
-        restaurant_name = form.cleaned_data["restaurant_name"]
-        description = form.cleaned_data["description"]
-
         user = authenticate(email=email, password=password)
 
-        restaurant = Restaurant.objects.create(
-            user=user, name=restaurant_name, description=description
-        )
-
         login(self.request, user)
-        return redirect("restaurant_info", pk=restaurant.pk)
+        return redirect("restaurant_info", pk=user.restaurant.id)
 
 
 class DeliveryRegistrationView(FormView):
@@ -167,14 +147,7 @@ class DeliveryRegistrationView(FormView):
         email = form.cleaned_data["email"]
         password = form.cleaned_data["password1"]
 
-        first_name = form.cleaned_data["first_name"]
-        last_name = form.cleaned_data["last_name"]
-
         user = authenticate(email=email, password=password)
-
-        DeliveryContractorInfo.objects.create(
-            user=user, first_name=first_name, last_name=last_name
-        )
 
         login(self.request, user)
         return redirect("index")
@@ -193,14 +166,53 @@ class RestaurantSearchView(ListView):
         kwargs = super().get_context_data(**kwargs)
         if query := self.request.GET.get("query"):
             kwargs["query"] = query
+        if order_by := self.request.GET.get("order_by"):
+            kwargs["order_by"] = order_by
+        if (
+            (user := self.request.user).is_authenticated
+            and user.user_type == "Reg"
+            and user.customer_info.location
+        ):
+            kwargs["user_has_location"] = True
         return kwargs
 
     def get_queryset(self):
         if query := self.request.GET.get("query"):
             query = query.strip().replace("  ", " ")
-            return Restaurant.objects.filter(
+            queryset = Restaurant.objects.filter(
                 Q(name__icontains=query) | Q(description__icontains=query)
             )
+            if (order_by := self.request.GET.get("order_by")) == "name":
+                return queryset.order_by("name")
+            elif order_by == "-name":
+                return queryset.order_by("-name")
+            elif order_by == "highest_rating":
+                return queryset.annotate(
+                    average_rating=Avg("reviews__rating")
+                ).order_by("average_rating")
+            elif order_by == "lowest_rating":
+                return queryset.annotate(
+                    average_rating=Avg("reviews__rating")
+                ).order_by("-average_rating")
+            elif (
+                order_by == "lowest_distance"
+                and (user := self.request.user).is_authenticated
+                and user.user_type == "Reg"
+                and user.customer_info.location
+            ):
+                user_x = user.customer_info.location_x_coordinate
+                user_y = user.customer_info.location_y_coordinate
+
+                queryset = queryset.all()
+                return sorted(
+                    queryset,
+                    key=lambda r: get_distance_in_miles(
+                        (user_x, user_y),
+                        (r.location_x_coordinate, r.location_y_coordinate),
+                    ),
+                )
+            else:
+                return queryset.order_by("name")
         else:
             return []
 
@@ -286,48 +298,14 @@ class EditMenuItemView(UpdateView):
 
 
 class EditRestaurantInfoView(UpdateView):
-    model = Restaurant
-    fields = (
-        "description",
-        "open_hour_sunday",
-        "close_hour_sunday",
-        "open_hour_monday",
-        "close_hour_monday",
-        "open_hour_tuesday",
-        "close_hour_tuesday",
-        "open_hour_wednesday",
-        "close_hour_wednesday",
-        "open_hour_thursday",
-        "close_hour_thursday",
-        "open_hour_friday",
-        "close_hour_friday",
-        "open_hour_saturday",
-        "close_hour_saturday",
-    )
-    template_name = "dinedashapp/restaurant_hours_form.html"
+    form_class = RestaurantInfoForm
+    template_name = "dinedashapp/restaurant_info_form.html"
 
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-
-        for field in form.fields.values():
-            field.required = False
-
-        return form
+    def get_object(self, queryset=None):
+        return self.request.user.restaurant
 
     def get_success_url(self):
         return reverse("restaurant_info", kwargs={"pk": self.object.pk})
-
-    def form_valid(self, form):
-        try:
-            return super().form_valid(form)
-        except IntegrityError as e:
-            if "_both_null_or_neither_null" in repr(e):
-                form.add_error(
-                    None,
-                    "Could not process data. If you entered an opening time for a day of the week, make sure to also specify a closing time for said day.",
-                )
-                return self.form_invalid(form)
-            raise e
 
 
 class ListOfReviewsView(ListView):
