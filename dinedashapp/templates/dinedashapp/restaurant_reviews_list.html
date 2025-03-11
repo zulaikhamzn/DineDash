@@ -6,7 +6,7 @@
 <h2 class="menu-header">{{ restaurant.name }}</h2>
 <h3 class="center">{{ restaurant.get_average_ratings }}</h3>
 <p class="center">Click <a href="{% url 'restaurant_info' restaurant.id  %}">here</a> to go back.</p>
-{% if user.is_authenticated %}
+{% if user.is_authenticated and user.user_type == "Reg" %}
 <p class="center">Click <a href="{% url 'create_restaurant_review' restaurant.id  %}">here</a> to write a review.</p>
 {% endif %}
 

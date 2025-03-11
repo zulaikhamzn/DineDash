@@ -1,6 +1,7 @@
 from functools import wraps
 
 from django.contrib.auth import authenticate, login, logout
+from django.core.exceptions import PermissionDenied
 from django.db.models import Avg, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
@@ -17,17 +18,20 @@ from dinedashapp.geo import get_distance_in_miles
 from dinedashapp.models import BlogPost, MenuItem, Restaurant, RestaurantReview
 
 
-def redirect_if_not_target(target=None):
+def check_authorization(user, target):
+    return (target is None and not user.is_authenticated) or (
+        (user.is_authenticated) and (target == user.user_type)
+    )
+
+
+def deny_if_not_target(target):
     def decorator(func):
-        @wraps
+        @wraps(func)
         def wrapper(request, *args, **kwargs):
-            user = request.user
-            if (target is None and user.is_authenticated) or (
-                target is not None
-                and ((not user.is_authenticated) or (target != user.user_type))
-            ):
-                return redirect("index")
-            return func(request, *args, **kwargs)
+            if check_authorization(request.user, target):
+                return func(request, *args, **kwargs)
+
+            raise PermissionDenied()
 
         return wrapper
 
@@ -56,11 +60,33 @@ def blog(request):
     return render(request, "dinedashapp/blog.html", {"blog_posts": posts})
 
 
+@deny_if_not_target(None)
 def log_in_question(request):
     return render(request, "dinedashapp/log_in_question.html")
 
 
-class RegularLogInView(FormView):
+class AnonymousUserRequiredMixin:
+    target = None
+
+    def dispatch(self, *args, **kwargs):
+        if check_authorization(self.request.user, self.target):
+            return super().dispatch(*args, **kwargs)
+        raise PermissionDenied()
+
+
+class RegularUserRequiredMixin(AnonymousUserRequiredMixin):
+    target = "Reg"
+
+
+class RestaurantUserRequiredMixin(AnonymousUserRequiredMixin):
+    target = "Res"
+
+
+class DeliveryUserRequiredMixin(AnonymousUserRequiredMixin):
+    target = "Del"
+
+
+class RegularLogInView(AnonymousUserRequiredMixin, FormView):
     template_name = "dinedashapp/log_in_form.html"
     form_class = LogInForm
     extra_context = {
@@ -86,12 +112,12 @@ class RestaurantLogInView(RegularLogInView):
 
 class DeliveryLogInView(RegularLogInView):
     extra_context = {
-        "title": " Contractor Log In",
+        "title": "Delivery Contractor Log In",
         "registration_url": reverse_lazy("register_delivery"),
     }
 
 
-class RegularRegistrationView(FormView):
+class RegularRegistrationView(AnonymousUserRequiredMixin, FormView):
     template_name = "dinedashapp/registration_form.html"
     form_class = RegularUserRegistrationForm
     extra_context = {
@@ -132,8 +158,7 @@ class RestaurantRegistrationView(RegularRegistrationView):
         return redirect("restaurant_info", pk=user.restaurant.id)
 
 
-class DeliveryRegistrationView(FormView):
-    template_name = "dinedashapp/registration_form.html"
+class DeliveryRegistrationView(RegularRegistrationView):
     form_class = DeliveryContractorRegistrationForm
     extra_context = {
         "title": "Delivery Contractor Registration",
@@ -230,7 +255,6 @@ class RestaurantInfoView(DetailView):
         context["is_owner"] = (
             user.is_authenticated and user.user_type == "Res" and user.restaurant == obj
         )
-        print(user.is_authenticated and user.user_type == "Res")
 
         context["sunday_hours"] = (
             f"{obj.open_hour_sunday.strftime("%I:%M %p").lstrip("0")} to {obj.close_hour_sunday.strftime("%I:%M %p").lstrip("0")}"
@@ -273,7 +297,7 @@ class RestaurantInfoView(DetailView):
         return context
 
 
-class CreateMenuItemView(CreateView):
+class CreateMenuItemView(RestaurantUserRequiredMixin, CreateView):
     model = MenuItem
     fields = ("name", "price", "description")
     template_name = "dinedashapp/menu_item_form.html"
@@ -285,7 +309,7 @@ class CreateMenuItemView(CreateView):
         return redirect("restaurant_info", obj.restaurant.pk)
 
 
-class EditMenuItemView(UpdateView):
+class EditMenuItemView(RestaurantUserRequiredMixin, UpdateView):
     model = MenuItem
     fields = ("name", "price", "description")
     template_name = "dinedashapp/menu_item_form.html"
@@ -297,7 +321,7 @@ class EditMenuItemView(UpdateView):
         return reverse("restaurant_info", kwargs={"pk": self.object.restaurant.pk})
 
 
-class EditRestaurantInfoView(UpdateView):
+class EditRestaurantInfoView(RestaurantUserRequiredMixin, UpdateView):
     form_class = RestaurantInfoForm
     template_name = "dinedashapp/restaurant_info_form.html"
 
@@ -323,7 +347,7 @@ class ListOfReviewsView(ListView):
         return context
 
 
-class CreateReviewView(CreateView):
+class CreateReviewView(RegularUserRequiredMixin, CreateView):
     model = RestaurantReview
     fields = ("rating", "description")
     template_name = "dinedashapp/restaurant_review_form.html"
