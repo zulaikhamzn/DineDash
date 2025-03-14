@@ -58,13 +58,14 @@ class RegularUserRegistrationForm(AbstractUserCreationForm):
     location = forms.CharField(label="Your location", max_length=300, required=False)
 
     def clean(self):
-        location = self.cleaned_data["location"]
-        try:
-            [x, y] = get_coordinates(location)
-            self.cleaned_data["location_x_coordinate"] = x
-            self.cleaned_data["location_y_coordinate"] = y
-        except GeopyError as e:
-            raise ValidationError("Could not findlocation.") from e
+        location = self.cleaned_data.get("location", "").strip()
+        if location:
+            try:
+                [x, y] = get_coordinates(location)
+                self.cleaned_data["location_x_coordinate"] = x
+                self.cleaned_data["location_y_coordinate"] = y
+            except GeopyError as e:
+                raise ValidationError("Could not find location.") from e
 
     def save(self, commit=True):
         user = super().save(commit)
@@ -90,13 +91,16 @@ class RestaurantRegistrationForm(AbstractUserCreationForm):
     location = forms.CharField(max_length=300)
 
     def clean(self):
-        location = self.cleaned_data["location"]
-        try:
-            [x, y] = get_coordinates(location)
-            self.cleaned_data["location_x_coordinate"] = x
-            self.cleaned_data["location_y_coordinate"] = y
-        except GeopyError as e:
-            raise ValidationError("Could not findlocation.") from e
+        location = self.cleaned_data.get("location", "").strip()
+        if location:
+            try:
+                [x, y] = get_coordinates(location)
+                self.cleaned_data["location_x_coordinate"] = x
+                self.cleaned_data["location_y_coordinate"] = y
+            except GeopyError as e:
+                raise ValidationError("Could not find location.") from e
+        else:
+            raise ValidationError("You need to include a valid location.")
 
     def save(self, commit=True):
         user = super().save(commit)
