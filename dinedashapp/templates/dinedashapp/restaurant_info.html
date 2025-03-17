@@ -9,7 +9,7 @@
 <div class="menu">
     <div class="menu-item">
         {% if is_owner %}
-        <p><a href="{% url 'edit_restaurant_info' restaurant.pk %}">Edit</a></p>
+        <p><a href="{% url 'edit_restaurant_info' %}">Edit</a></p>
         {% endif %}
         <h4>Hours</h4>
         <p>Sunday: {{ sunday_hours }}</p>

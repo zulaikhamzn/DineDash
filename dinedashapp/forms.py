@@ -8,7 +8,8 @@ from dinedashapp.geo import get_coordinates
 from dinedashapp.models import CustomerInfo, DeliveryContractorInfo, Restaurant, User
 
 
-class LogInForm(forms.Form):
+class AbstractLogInForm(forms.Form):
+    user_type: str
     email = forms.EmailField()
     password = forms.CharField(widget=forms.PasswordInput())
 
@@ -23,14 +24,30 @@ class LogInForm(forms.Form):
         self.user = authenticate(email=email, password=password)
         if not self.user:
             raise ValidationError("Email and password are incorrect.")
+        if self.user.user_type != self.user_type:
+            raise ValidationError(
+                "This form is not intended for the type of account associated with the credentials you provided."
+            )
+
+
+class RegularUserLogInForm(AbstractLogInForm):
+    user_type = "Reg"
+
+
+class RestaurantLogInForm(AbstractLogInForm):
+    user_type = "Res"
+
+
+class DeliveryContractorLogInForm(AbstractLogInForm):
+    user_type = "Del"
 
 
 class AbstractUserCreationForm(BaseUserCreationForm):
-    user_type = forms.CharField(widget=forms.HiddenInput(), required=False)
+    user_type: str
 
     class Meta:
         model = User
-        fields = ("email", "user_type")
+        fields = ("email",)
 
     def clean_email(self):
         """Reject emails that differ only in case."""
@@ -39,20 +56,16 @@ class AbstractUserCreationForm(BaseUserCreationForm):
             raise ValidationError("A user with this email address already exists.")
         return email
 
-    def __init__(self, *args, **kwargs):
-        hidden_value = kwargs.pop("user_type", "Reg")
-        super().__init__(*args, **kwargs)
-        self.fields["user_type"].initial = hidden_value
-
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.hidden_field = self.cleaned_data["user_type"]
+        user.user_type = self.user_type
         if commit:
             user.save()
         return user
 
 
 class RegularUserRegistrationForm(AbstractUserCreationForm):
+    user_type = "Reg"
     first_name = forms.CharField(max_length=150)
     last_name = forms.CharField(max_length=150)
     location = forms.CharField(label="Your location", max_length=300, required=False)
@@ -86,6 +99,7 @@ class RegularUserRegistrationForm(AbstractUserCreationForm):
 
 
 class RestaurantRegistrationForm(AbstractUserCreationForm):
+    user_type = "Res"
     restaurant_name = forms.CharField(max_length=200)
     description = forms.CharField(max_length=1000)
     location = forms.CharField(max_length=300)
@@ -121,6 +135,7 @@ class RestaurantRegistrationForm(AbstractUserCreationForm):
 
 
 class DeliveryContractorRegistrationForm(AbstractUserCreationForm):
+    user_type = "Del"
     first_name = forms.CharField(max_length=150)
     last_name = forms.CharField(max_length=150)
 
@@ -166,7 +181,7 @@ class RestaurantInfoForm(forms.ModelForm):
                 self.cleaned_data["location_x_coordinate"] = x
                 self.cleaned_data["location_y_coordinate"] = y
             except GeopyError as e:
-                raise ValidationError("Could not findlocation.") from e
+                raise ValidationError("Could not find location.") from e
 
     class Meta:
         model = Restaurant

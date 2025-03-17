@@ -8,10 +8,12 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DetailView, FormView, ListView, UpdateView
 
 from dinedashapp.forms import (
+    DeliveryContractorLogInForm,
     DeliveryContractorRegistrationForm,
-    LogInForm,
+    RegularUserLogInForm,
     RegularUserRegistrationForm,
     RestaurantInfoForm,
+    RestaurantLogInForm,
     RestaurantRegistrationForm,
 )
 from dinedashapp.geo import get_distance_in_miles
@@ -88,7 +90,7 @@ class DeliveryUserRequiredMixin(AnonymousUserRequiredMixin):
 
 class RegularLogInView(AnonymousUserRequiredMixin, FormView):
     template_name = "dinedashapp/log_in_form.html"
-    form_class = LogInForm
+    form_class = RegularUserLogInForm
     extra_context = {
         "title": "Regular Customer Log In",
         "registration_url": reverse_lazy("register_regular"),
@@ -100,6 +102,7 @@ class RegularLogInView(AnonymousUserRequiredMixin, FormView):
 
 
 class RestaurantLogInView(RegularLogInView):
+    form_class = RestaurantLogInForm
     extra_context = {
         "title": "Restaurant Log In",
         "registration_url": reverse_lazy("register_restaurant"),
@@ -111,6 +114,7 @@ class RestaurantLogInView(RegularLogInView):
 
 
 class DeliveryLogInView(RegularLogInView):
+    form_class = DeliveryContractorLogInForm
     extra_context = {
         "title": "Delivery Contractor Log In",
         "registration_url": reverse_lazy("register_delivery"),
@@ -124,7 +128,6 @@ class RegularRegistrationView(AnonymousUserRequiredMixin, FormView):
         "title": "Regular Customer Registration",
         "log_in_url": reverse_lazy("log_in_regular"),
     }
-    initial = {"user_type": "Reg"}
 
     def form_valid(self, form):
         form.save()
@@ -144,7 +147,6 @@ class RestaurantRegistrationView(RegularRegistrationView):
         "title": "Restaurant Registration",
         "log_in_url": reverse_lazy("log_in_restaurant"),
     }
-    initial = {"user_type": "Res"}
 
     def form_valid(self, form):
         form.save()
@@ -164,7 +166,6 @@ class DeliveryRegistrationView(RegularRegistrationView):
         "title": "Delivery Contractor Registration",
         "log_in_url": reverse_lazy("log_in_delivery"),
     }
-    initial = {"user_type": "Del"}
 
     def form_valid(self, form):
         form.save()
@@ -329,7 +330,9 @@ class EditRestaurantInfoView(RestaurantUserRequiredMixin, UpdateView):
         return self.request.user.restaurant
 
     def get_success_url(self):
-        return reverse("restaurant_info", kwargs={"pk": self.object.pk})
+        return reverse(
+            "restaurant_info", kwargs={"pk": self.request.user.restaurant.id}
+        )
 
 
 class ListOfReviewsView(ListView):

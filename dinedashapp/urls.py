@@ -48,7 +48,7 @@ urlpatterns = [
     path("order", RestaurantSearchView.as_view(), name="restaurant_search"),
     path("restaurant/<int:pk>", RestaurantInfoView.as_view(), name="restaurant_info"),
     path(
-        "restaurant/<int:pk>/edit",
+        "restaurant/edit",
         EditRestaurantInfoView.as_view(),
         name="edit_restaurant_info",
     ),
