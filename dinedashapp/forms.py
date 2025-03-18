@@ -159,6 +159,7 @@ class RestaurantInfoForm(forms.ModelForm):
 
     def clean(self):
         super().clean()
+
         for day in (
             "sunday",
             "monday",
@@ -168,6 +169,16 @@ class RestaurantInfoForm(forms.ModelForm):
             "friday",
             "saturday",
         ):
+            if "open_hour_" + day not in self.cleaned_data:
+                raise ValidationError(
+                    f"The format of the opening hour for {day.capitalize()} is invalid."
+                )
+
+            if "close_hour_" + day not in self.cleaned_data:
+                raise ValidationError(
+                    f"The format of the closing hour for {day.capitalize()} is invalid."
+                )
+
             if bool(self.cleaned_data["open_hour_" + day]) != bool(
                 self.cleaned_data["close_hour_" + day]
             ):
@@ -175,7 +186,8 @@ class RestaurantInfoForm(forms.ModelForm):
                     "If you entered an opening time for a day of the week, make sure to also specify a closing time for said day."
                 )
 
-            location = self.cleaned_data["location"]
+        location = self.cleaned_data["location"]
+        if location != self.initial["location"]:
             try:
                 [x, y] = get_coordinates(location)
                 self.cleaned_data["location_x_coordinate"] = x

@@ -125,7 +125,7 @@ class Restaurant(models.Model):
 
         constraints = [
             models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     open_hour_sunday__isnull=True, close_hour_sunday__isnull=True
                 )
                 | models.Q(
@@ -134,7 +134,7 @@ class Restaurant(models.Model):
                 name="sunday_both_null_or_neither_null",
             ),
             models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     open_hour_monday__isnull=True, close_hour_monday__isnull=True
                 )
                 | models.Q(
@@ -143,7 +143,7 @@ class Restaurant(models.Model):
                 name="monday_both_null_or_neither_null",
             ),
             models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     open_hour_tuesday__isnull=True, close_hour_tuesday__isnull=True
                 )
                 | models.Q(
@@ -152,7 +152,7 @@ class Restaurant(models.Model):
                 name="tuesday_both_null_or_neither_null",
             ),
             models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     open_hour_wednesday__isnull=True, close_hour_wednesday__isnull=True
                 )
                 | models.Q(
@@ -162,7 +162,7 @@ class Restaurant(models.Model):
                 name="wednesday_both_null_or_neither_null",
             ),
             models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     open_hour_thursday__isnull=True, close_hour_thursday__isnull=True
                 )
                 | models.Q(
@@ -171,7 +171,7 @@ class Restaurant(models.Model):
                 name="thursday_both_null_or_neither_null",
             ),
             models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     open_hour_friday__isnull=True, close_hour_friday__isnull=True
                 )
                 | models.Q(
@@ -180,13 +180,56 @@ class Restaurant(models.Model):
                 name="friday_both_null_or_neither_null",
             ),
             models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     open_hour_saturday__isnull=True, close_hour_saturday__isnull=True
                 )
                 | models.Q(
                     open_hour_saturday__isnull=False, close_hour_saturday__isnull=False
                 ),
                 name="saturday_both_null_or_neither_null",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(open_hour_sunday__lt=models.F("close_hour_sunday")),
+                name="sunday_open_hour_must_be_earlier_than_close_hour",
+                violation_error_message="Sunday's opening hour must be earlier than its closing hour.",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(open_hour_monday__lt=models.F("close_hour_monday")),
+                name="monday_open_hour_must_be_earlier_than_close_hour",
+                violation_error_message="Monday's opening hour must be earlier than its closing hour.",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    open_hour_tuesday__lt=models.F("close_hour_tuesday")
+                ),
+                name="tuesday_open_hour_must_be_earlier_than_close_hour",
+                violation_error_message="Tuesday's opening hour must be earlier than its closing hour.",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    open_hour_wednesday__lt=models.F("close_hour_wednesday")
+                ),
+                name="wednesday_open_hour_must_be_earlier_than_close_hour",
+                violation_error_message="Wednesday's opening hour must be earlier than its closing hour.",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    open_hour_thursday__lt=models.F("close_hour_thursday")
+                ),
+                name="thursday_open_hour_must_be_earlier_than_close_hour",
+                violation_error_message="Thursday's opening hour must be earlier than its closing hour.",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(open_hour_friday__lt=models.F("close_hour_friday")),
+                name="friday_open_hour_must_be_earlier_than_close_hour",
+                violation_error_message="Friday's opening hour must be earlier than its closing hour.",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    open_hour_saturday__lt=models.F("close_hour_saturday")
+                ),
+                name="saturday_open_hour_must_be_earlier_than_close_hour",
+                violation_error_message="Saturday's opening hour must be earlier than its closing hour.",
             ),
         ]
 
