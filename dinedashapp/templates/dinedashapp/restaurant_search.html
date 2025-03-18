@@ -26,6 +26,12 @@
     {% for restaurant in restaurants %}
     <div class="menu-item">
         <h4><a href="{% url 'restaurant_info' restaurant.pk %}">{{ restaurant.name }}</a></h4>
+        {% if restaurant.average_rating %}
+        <p>Rated {{ restaurant.average_rating }} out of 5</p>
+        {% endif %}
+        {% if "distance_away" in restaurant %}
+        <p>{{ restaurant.distance_away|floatformat:2 }} miles away</p>
+        {% endif %}
         <p>{{ restaurant.description }}</p>
     </div>
     {% empty %}

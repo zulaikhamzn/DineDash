@@ -203,42 +203,69 @@ class RestaurantSearchView(ListView):
         return kwargs
 
     def get_queryset(self):
-        queryset = Restaurant.objects.all()
+        queryset = Restaurant.objects.values(
+            "pk",
+            "name",
+            "description",
+            "location_x_coordinate",
+            "location_y_coordinate",
+        ).annotate(average_rating=Avg("reviews__rating"))
+
         if query := self.request.GET.get("query"):
             query = query.strip().replace("  ", " ")
             queryset = queryset.filter(
                 Q(name__icontains=query) | Q(description__icontains=query)
             )
-            if (order_by := self.request.GET.get("order_by")) == "name":
-                return queryset.order_by("name")
-            elif order_by == "-name":
-                return queryset.order_by("-name")
-            elif order_by == "highest_rating":
-                return queryset.annotate(
-                    average_rating=Avg("reviews__rating")
-                ).order_by("-average_rating", "name")
-            elif order_by == "lowest_rating":
-                return queryset.annotate(
-                    average_rating=Avg("reviews__rating")
-                ).order_by("average_rating", "name")
-            elif (
-                order_by == "lowest_distance"
-                and (user := self.request.user).is_authenticated
-                and user.user_type == "Reg"
-                and user.customer_info.location
-            ):
-                user_x = user.customer_info.location_x_coordinate
-                user_y = user.customer_info.location_y_coordinate
 
-                queryset = queryset.order_by("name")
-                return sorted(
-                    queryset,
-                    key=lambda r: get_distance_in_miles(
-                        (user_x, user_y),
-                        (r.location_x_coordinate, r.location_y_coordinate),
-                    ),
-                )
-        return queryset.order_by("name")
+        if (order_by := self.request.GET.get("order_by")) == "name":
+            queryset = queryset.order_by("name")
+        elif order_by == "-name":
+            queryset = queryset.order_by("-name")
+        elif order_by == "highest_rating":
+            # Only includes restaurants that have reviews.
+            queryset = queryset.filter(average_rating__gt=0).order_by(
+                "-average_rating", "name"
+            )
+        elif order_by == "lowest_rating":
+            # Only includes restaurants that have reviews.
+            queryset = queryset.filter(average_rating__gt=0).order_by(
+                "average_rating", "name"
+            )
+        else:
+            queryset = queryset.order_by("name")
+
+        user = self.request.user
+        user_has_location = (
+            user.is_authenticated
+            and user.user_type == "Reg"
+            and user.customer_info.location
+        )
+
+        if user_has_location:
+            user_coordinates = (
+                user.customer_info.location_x_coordinate,
+                user.customer_info.location_y_coordinate,
+            )
+            result = map(
+                lambda r: r
+                | {
+                    "distance_away": get_distance_in_miles(
+                        (r["location_x_coordinate"], r["location_y_coordinate"]),
+                        user_coordinates,
+                    )
+                },
+                queryset,
+            )
+        else:
+            result = queryset
+
+        if order_by == "lowest_distance" and user_has_location:
+            result = sorted(
+                result,
+                key=lambda r: r["distance_away"],
+            )
+
+        return result
 
 
 class RestaurantInfoView(DetailView):
