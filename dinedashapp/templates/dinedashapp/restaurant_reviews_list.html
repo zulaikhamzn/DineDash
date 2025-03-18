@@ -8,6 +8,8 @@
 <p class="center">Click <a href="{% url 'restaurant_info' restaurant.id  %}">here</a> to go back.</p>
 {% if user.is_authenticated and user.user_type == "Reg" %}
 <p class="center">Click <a href="{% url 'create_restaurant_review' restaurant.id  %}">here</a> to write a review.</p>
+{% else %}
+<p class="center">You can only write a review if you are logged in as a regular customer.</p>
 {% endif %}
 
 {% for review in reviews %}

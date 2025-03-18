@@ -203,9 +203,10 @@ class RestaurantSearchView(ListView):
         return kwargs
 
     def get_queryset(self):
+        queryset = Restaurant.objects.all()
         if query := self.request.GET.get("query"):
             query = query.strip().replace("  ", " ")
-            queryset = Restaurant.objects.filter(
+            queryset = queryset.filter(
                 Q(name__icontains=query) | Q(description__icontains=query)
             )
             if (order_by := self.request.GET.get("order_by")) == "name":
@@ -237,10 +238,7 @@ class RestaurantSearchView(ListView):
                         (r.location_x_coordinate, r.location_y_coordinate),
                     ),
                 )
-            else:
-                return queryset.order_by("name")
-        else:
-            return []
+        return queryset.order_by("name")
 
 
 class RestaurantInfoView(DetailView):

@@ -18,11 +18,10 @@
                 distance</option>
             {% endif %}
         </select>
-        <input type="submit" value="Search">
+        <input type="submit">
     </form>
 </div>
 
-{% if query %}
 <div class="menu menu-vertical">
     {% for restaurant in restaurants %}
     <div class="menu-item">
@@ -31,9 +30,8 @@
     </div>
     {% empty %}
     <div class="menu-item">
-        <em>No items found</em>
+        <em>No restaurants found.</em>
     </div>
     {% endfor %}
 </div>
-{% endif %}
 {% endblock content %}
