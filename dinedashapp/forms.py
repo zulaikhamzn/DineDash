@@ -215,3 +215,48 @@ class RestaurantInfoForm(forms.ModelForm):
             "open_hour_saturday",
             "close_hour_saturday",
         )
+
+    # Django seems to have a bug where the TIME_INPUT_FORMATS setting is not
+    # recognized, which makes it necessary to set the input format manually.
+    open_hour_sunday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    close_hour_sunday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    open_hour_monday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    close_hour_monday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    open_hour_tuesday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    close_hour_tuesday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    open_hour_wednesday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    close_hour_wednesday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    open_hour_thursday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    close_hour_thursday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    open_hour_friday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    close_hour_friday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    open_hour_saturday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    close_hour_saturday = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
