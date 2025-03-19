@@ -28,9 +28,9 @@
         <p>Click <a href="{% url 'restaurant_reviews' restaurant.id %}">here</a> to see reviews.</p>
     </div>
 </div>
-<div class="menu">
+<div class="menu menu-vertical">
     {% if is_owner %}
-    <p><a href="{% url 'create_menu_item' %}">Add item</a></p>
+    <p class="center"><a href="{% url 'create_menu_item' %}">Add item</a></p>
     {% endif %}
     {% for menu_item in restaurant.menu_items.all %}
     <div class="menu-item">
