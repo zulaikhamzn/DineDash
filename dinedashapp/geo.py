@@ -1,7 +1,7 @@
 from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
 
-geolocator = Nominatim(user_agent="DineDash")
+geolocator = Nominatim(user_agent="DineDash", timeout=10)
 
 
 def get_coordinates(location):
