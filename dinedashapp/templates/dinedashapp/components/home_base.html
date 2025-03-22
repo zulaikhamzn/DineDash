@@ -162,8 +162,9 @@
                     {% if user.user_type == "Reg" %}
                     Signed in as {{ user.customer_info.get_full_name }}
                     {% elif user.user_type == "Res" %}
-                    Signed in as <a style="color: inherit;" href="{% url 'restaurant_info' user.restaurant.pk %}">{{
-                        user.restaurant.name }}</a>
+                    Signed in as <a style="color: inherit;" href="{% url 'restaurant_info' user.restaurant.pk %}">
+                        {{ user.restaurant.name }}
+                    </a>
                     {% else %}
                     Signed in as {{ user.delivery_contractor_info.get_full_name }}
                     {% endif %}
