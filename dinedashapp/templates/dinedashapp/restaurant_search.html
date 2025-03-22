@@ -3,7 +3,7 @@
 {% block title %}DineDash - Restaurant Search{% endblock title %}
 
 {% block content %}
-<div class="pricing">
+<div class="menu">
     <form class="search-bar-form">
         <input type="text" placeholder="Search..." name="query" value="{{ query }}" />
         <select name="order_by">
@@ -22,7 +22,7 @@
     </form>
 </div>
 
-<div class="menu menu-vertical">
+<div class="menu vertical">
     {% for restaurant in restaurants %}
     <div class="menu-item">
         <h4><a href="{% url 'restaurant_info' restaurant.pk %}">{{ restaurant.name }}</a></h4>
