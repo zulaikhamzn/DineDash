@@ -1,0 +1,9 @@
+{% extends 'dinedashapp/components/home_base.html' %}
+
+{% block title %}DineDash - Your Account{% endblock title %}
+
+{% block content %}
+<h2 class="menu-header">Hello, {{ user.customer_info.first_name }}</h2>
+<p class="center">Click <a href="{% url 'edit_regular_account' %}">here</a> to edit your account information.</p>
+</div>
+{% endblock content %}

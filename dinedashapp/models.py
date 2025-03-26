@@ -63,7 +63,7 @@ class CustomerInfo(models.Model):
 
     first_name = models.CharField("first name", max_length=150)
     last_name = models.CharField("last name", max_length=150)
-    location = models.CharField("defaultlocation", max_length=300, null=True)
+    location = models.CharField("location", max_length=300, null=True)
     location_x_coordinate = models.DecimalField(
         max_digits=9, decimal_places=6, null=True
     )

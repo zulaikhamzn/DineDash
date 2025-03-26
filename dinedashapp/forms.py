@@ -195,6 +195,14 @@ class RestaurantInfoForm(forms.ModelForm):
             except GeopyError as e:
                 raise ValidationError("Could not find location.") from e
 
+    def save(self, commit=True):
+        obj = super().save(False)
+        obj.location_x_coordinate = self.cleaned_data["location_x_coordinate"]
+        obj.location_y_coordinate = self.cleaned_data["location_y_coordinate"]
+        if commit:
+            obj.save()
+        return obj
+
     class Meta:
         model = Restaurant
         fields = (
@@ -260,3 +268,36 @@ class RestaurantInfoForm(forms.ModelForm):
     close_hour_saturday = forms.TimeField(
         input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
     )
+
+
+class RegularAccountDetailsForm(forms.ModelForm):
+    class Meta:
+        model = CustomerInfo
+        fields = ("first_name", "last_name", "location")
+
+    location = forms.CharField(
+        label="Your location (optional)", max_length=300, required=False
+    )
+
+    def clean(self):
+        super().clean()
+        location = self.cleaned_data.get("location")
+        if location:
+            if location != self.initial["location"]:
+                try:
+                    [x, y] = get_coordinates(location)
+                    self.cleaned_data["location_x_coordinate"] = x
+                    self.cleaned_data["location_y_coordinate"] = y
+                except GeopyError as e:
+                    raise ValidationError("Could not find location.") from e
+        else:
+            self.cleaned_data["location_x_coordinate"] = None
+            self.cleaned_data["location_y_coordinate"] = None
+
+    def save(self, commit=True):
+        obj = super().save(False)
+        obj.location_x_coordinate = self.cleaned_data["location_x_coordinate"]
+        obj.location_y_coordinate = self.cleaned_data["location_y_coordinate"]
+        if commit:
+            obj.save()
+        return obj

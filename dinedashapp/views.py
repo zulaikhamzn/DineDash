@@ -1,15 +1,24 @@
 from functools import wraps
 
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.views import PasswordChangeView
 from django.core.exceptions import PermissionDenied
 from django.db.models import Avg, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DetailView, FormView, ListView, UpdateView
+from django.views.generic import (
+    CreateView,
+    DetailView,
+    FormView,
+    ListView,
+    TemplateView,
+    UpdateView,
+)
 
 from dinedashapp.forms import (
     DeliveryContractorLogInForm,
     DeliveryContractorRegistrationForm,
+    RegularAccountDetailsForm,
     RegularUserLogInForm,
     RegularUserRegistrationForm,
     RestaurantInfoForm,
@@ -392,3 +401,39 @@ class CreateReviewView(RegularUserRequiredMixin, CreateView):
         obj.user = self.request.user
         obj.save()
         return redirect("restaurant_reviews", restaurant_id)
+
+
+class AbstractChangePasswordView(PasswordChangeView):
+    template_name = "dinedashapp/change_password_form.html"
+
+
+class ChangePasswordForRegularView(
+    RegularUserRequiredMixin, AbstractChangePasswordView
+):
+    success_url = reverse_lazy("regular_account")
+
+
+class ChangePasswordForRestaurantView(
+    RestaurantUserRequiredMixin, AbstractChangePasswordView
+):
+    def get_success_url(self):
+        return redirect("restaurant_info", pk=self.request.user.restaurant.pk)
+
+
+class ChangePasswordForDeliveryView(
+    DeliveryUserRequiredMixin, AbstractChangePasswordView
+):
+    success_url = reverse_lazy("index")
+
+
+class RegularAccountView(RegularUserRequiredMixin, TemplateView):
+    template_name = "dinedashapp/regular_account.html"
+
+
+class EditRegularAccountDetailsView(RegularUserRequiredMixin, UpdateView):
+    form_class = RegularAccountDetailsForm
+    template_name = "dinedashapp/edit_regular_account_details.html"
+    success_url = reverse_lazy("regular_account")
+
+    def get_object(self, queryset=None):
+        return self.request.user.customer_info
