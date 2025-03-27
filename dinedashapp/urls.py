@@ -1,6 +1,7 @@
 from django.urls import path
 
 from dinedashapp.views import (
+    ChangeEmailView,
     ChangePasswordView,
     CreateMenuItemView,
     CreateReviewView,
@@ -67,6 +68,7 @@ urlpatterns = [
     ),
     path("menu/create", CreateMenuItemView.as_view(), name="create_menu_item"),
     path("menu/edit/<int:pk>", EditMenuItemView.as_view(), name="edit_menu_item"),
+    path("account/change_email", ChangeEmailView.as_view(), name="change_email"),
     path(
         "account/change_password",
         ChangePasswordView.as_view(),

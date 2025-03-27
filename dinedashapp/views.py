@@ -26,7 +26,7 @@ from dinedashapp.forms import (
     RestaurantRegistrationForm,
 )
 from dinedashapp.geo import get_distance_in_miles
-from dinedashapp.models import BlogPost, MenuItem, Restaurant, RestaurantReview
+from dinedashapp.models import BlogPost, MenuItem, Restaurant, RestaurantReview, User
 
 
 def check_authorization(user, target):
@@ -410,17 +410,33 @@ class CreateReviewView(RegularUserRequiredMixin, CreateView):
         return redirect("restaurant_reviews", restaurant_id)
 
 
+def get_url_after_change(user):
+    match user.user_type:
+        case "Reg":
+            return reverse("regular_account")
+        case "Res":
+            return reverse("restaurant_info", kwargs={"pk": user.restaurant.pk})
+        case "Del":
+            return reverse("index")
+
+
+class ChangeEmailView(AuthenticationRequiredMixin, UpdateView):
+    model = User
+    fields = ("email",)
+    template_name = "dinedashapp/change_email_form.html"
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def get_success_url(self):
+        return get_url_after_change(self.request.user)
+
+
 class ChangePasswordView(AuthenticationRequiredMixin, PasswordChangeView):
     template_name = "dinedashapp/change_password_form.html"
 
     def get_success_url(self):
-        match self.request.user.user_type:
-            case "Reg":
-                return reverse("regular_account")
-            case "Res":
-                return reverse("restaurant_info")
-            case "Del":
-                return reverse("index")
+        return get_url_after_change(self.request.user)
 
 
 class RegularAccountView(RegularUserRequiredMixin, TemplateView):
