@@ -97,6 +97,13 @@ class DeliveryUserRequiredMixin(AnonymousUserRequiredMixin):
     target = "Del"
 
 
+class AuthenticationRequiredMixin:
+    def dispatch(self, *args, **kwargs):
+        if self.request.user.is_authenticated:
+            return super().dispatch(*args, **kwargs)
+        raise PermissionDenied()
+
+
 class RegularLogInView(AnonymousUserRequiredMixin, FormView):
     template_name = "dinedashapp/log_in_form.html"
     form_class = RegularUserLogInForm
@@ -403,27 +410,17 @@ class CreateReviewView(RegularUserRequiredMixin, CreateView):
         return redirect("restaurant_reviews", restaurant_id)
 
 
-class AbstractChangePasswordView(PasswordChangeView):
+class ChangePasswordView(AuthenticationRequiredMixin, PasswordChangeView):
     template_name = "dinedashapp/change_password_form.html"
 
-
-class ChangePasswordForRegularView(
-    RegularUserRequiredMixin, AbstractChangePasswordView
-):
-    success_url = reverse_lazy("regular_account")
-
-
-class ChangePasswordForRestaurantView(
-    RestaurantUserRequiredMixin, AbstractChangePasswordView
-):
     def get_success_url(self):
-        return redirect("restaurant_info", pk=self.request.user.restaurant.pk)
-
-
-class ChangePasswordForDeliveryView(
-    DeliveryUserRequiredMixin, AbstractChangePasswordView
-):
-    success_url = reverse_lazy("index")
+        match self.request.user.user_type:
+            case "Reg":
+                return reverse("regular_account")
+            case "Res":
+                return reverse("restaurant_info")
+            case "Del":
+                return reverse("index")
 
 
 class RegularAccountView(RegularUserRequiredMixin, TemplateView):

@@ -1,9 +1,7 @@
 from django.urls import path
 
 from dinedashapp.views import (
-    ChangePasswordForDeliveryView,
-    ChangePasswordForRegularView,
-    ChangePasswordForRestaurantView,
+    ChangePasswordView,
     CreateMenuItemView,
     CreateReviewView,
     DeliveryLogInView,
@@ -70,19 +68,9 @@ urlpatterns = [
     path("menu/create", CreateMenuItemView.as_view(), name="create_menu_item"),
     path("menu/edit/<int:pk>", EditMenuItemView.as_view(), name="edit_menu_item"),
     path(
-        "account/change_password_for_regular",
-        ChangePasswordForRegularView.as_view(),
-        name="change_password_for_regular",
-    ),
-    path(
-        "account/change_password_for_restaurant",
-        ChangePasswordForRestaurantView.as_view(),
-        name="change_password_for_restaurant",
-    ),
-    path(
-        "account/change_password_for_delivery",
-        ChangePasswordForDeliveryView.as_view(),
-        name="change_password_for_delivery",
+        "account/change_password",
+        ChangePasswordView.as_view(),
+        name="change_password",
     ),
     path(
         "regular_account",
