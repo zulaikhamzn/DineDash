@@ -8,11 +8,13 @@ from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     CreateView,
+    DeleteView,
     DetailView,
     FormView,
     ListView,
     TemplateView,
     UpdateView,
+    View,
 )
 
 from dinedashapp.forms import (
@@ -336,7 +338,20 @@ class RestaurantInfoView(DetailView):
 
         context["average_rating"] = obj.get_average_rating()
 
+        context["is_favorite"] = obj in user.customer_info.favorite_restaurants.all()
+
         return context
+
+
+class ModifyFavoriteStatus(RegularUserRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        restaurant_id = kwargs["pk"]
+        obj = Restaurant.objects.get(id=restaurant_id)
+        if kwargs["status"]:
+            obj.favorited_by.add(self.request.user.customer_info)
+        else:
+            obj.favorited_by.remove(self.request.user.customer_info)
+        return redirect("restaurant_info", restaurant_id)
 
 
 class CreateMenuItemView(RestaurantUserRequiredMixin, CreateView):
@@ -388,6 +403,9 @@ class ListOfReviewsView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["restaurant"] = Restaurant.objects.get(pk=self.kwargs["restaurant_id"])
+        context["review_from_user_exists"] = (
+            self.get_queryset().filter(user__pk=self.request.user.id).exists()
+        )
         return context
 
 
@@ -408,6 +426,40 @@ class CreateReviewView(RegularUserRequiredMixin, CreateView):
         obj.user = self.request.user
         obj.save()
         return redirect("restaurant_reviews", restaurant_id)
+
+
+class EditReviewView(RegularUserRequiredMixin, UpdateView):
+    model = RestaurantReview
+    fields = ("rating", "description")
+    template_name = "dinedashapp/restaurant_review_form.html"
+
+    def get_object(self, queryset=None):
+        return RestaurantReview.objects.get(
+            user__pk=self.request.user.id, restaurant__pk=self.kwargs["restaurant_id"]
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["restaurant_id"] = self.kwargs["restaurant_id"]
+        context["can_delete"] = True
+        return context
+
+    def get_success_url(self):
+        restaurant_id = self.object.restaurant.id
+        return reverse("restaurant_reviews", kwargs={"restaurant_id": restaurant_id})
+
+
+class DeleteReviewView(RegularUserRequiredMixin, DeleteView):
+    template_name = "dinedashapp/restaurant_review_confirm_delete.html"
+
+    def get_object(self, queryset=None):
+        return RestaurantReview.objects.get(
+            user__pk=self.request.user.id, pk=self.kwargs["review_id"]
+        )
+
+    def get_success_url(self):
+        restaurant_id = self.object.restaurant.id
+        return reverse("restaurant_reviews", kwargs={"restaurant_id": restaurant_id})
 
 
 def get_url_after_change(user):
@@ -441,6 +493,13 @@ class ChangePasswordView(AuthenticationRequiredMixin, PasswordChangeView):
 
 class RegularAccountView(RegularUserRequiredMixin, TemplateView):
     template_name = "dinedashapp/regular_account.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["favorite_restaurants"] = (
+            self.request.user.customer_info.favorite_restaurants.all()
+        )
+        return context
 
 
 class EditRegularAccountDetailsView(RegularUserRequiredMixin, UpdateView):

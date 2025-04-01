@@ -5,5 +5,18 @@
 {% block content %}
 <h2 class="menu-header">Hello, {{ user.customer_info.first_name }}</h2>
 <p class="center">Click <a href="{% url 'edit_regular_account' %}">here</a> to edit your account information.</p>
+
+{% if favorite_restaurants %}
+<div class="menu vertical">
+    <div class="menu-item">
+        <h3>Your Favorite Restaurants</h3>
+        <ul class="unstyled-list">
+            {% for restaurant in favorite_restaurants %}
+            <li><a href="{% url 'restaurant_info' restaurant.pk %}">{{ restaurant.name }}</a> -
+                {{ restaurant.description }}</li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>
+{% endif %}
 {% endblock content %}

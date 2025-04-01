@@ -114,6 +114,10 @@ class Restaurant(models.Model):
     location_x_coordinate = models.DecimalField(max_digits=10, decimal_places=7)
     location_y_coordinate = models.DecimalField(max_digits=10, decimal_places=7)
 
+    favorited_by = models.ManyToManyField(
+        CustomerInfo, related_name="favorite_restaurants"
+    )
+
     def __str__(self):
         return str(self.name)
 
@@ -264,6 +268,12 @@ class RestaurantReview(models.Model):
 
     class Meta:
         ordering = ["-date_created"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("user", "restaurant"),
+                name="at_most_one_review_per_restaurant_per_user",
+            )
+        ]
 
 
 class DeliveryContractorInfo(models.Model):
