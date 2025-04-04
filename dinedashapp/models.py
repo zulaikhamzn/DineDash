@@ -3,7 +3,11 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin,
 )
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import (
+    MaxValueValidator,
+    MinLengthValidator,
+    MinValueValidator,
+)
 from django.db import models
 from django.db.models import Avg
 from django.utils import timezone
@@ -329,6 +333,8 @@ class OrderItem(models.Model):
     )
     order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField("quantity")
+    date_placed = models.DateTimeField(null=True)
+    date_delivered = models.DateTimeField(null=True)
 
     class Meta:
         ordering = ["menu_item__name"]
@@ -338,3 +344,25 @@ class OrderItem(models.Model):
                 name="menu_item_can_only_appear_once_in_order",
             )
         ]
+
+
+class Payment(models.Model):
+    order = models.OneToOneField(
+        Order, on_delete=models.CASCADE, related_name="payment"
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="payments")
+    amount_paid = models.DecimalField(max_digits=6, decimal_places=2)
+
+    class PaymentMethods(models.TextChoices):
+        CREDIT_CARD = "Cr", "Credit card"
+        DEBIT_CARD = "De", "Debit card"
+
+    payment_method = models.CharField(max_length=2, choices=PaymentMethods)
+    cardholder_name = models.CharField("Full name on card", max_length=300)
+    billing_address = models.CharField(max_length=300, null=True)
+    card_number = models.CharField(max_length=16, validators=[MinLengthValidator(16)])
+    expiration_month = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(12)]
+    )
+    expiration_year = models.PositiveSmallIntegerField()
+    cvv = models.CharField("CVV", max_length=4, validators=[MinLengthValidator(3)])

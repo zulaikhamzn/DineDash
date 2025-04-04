@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Avg, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils.timezone import now as datetime_now
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -34,6 +35,7 @@ from dinedashapp.models import (
     MenuItem,
     Order,
     OrderItem,
+    Payment,
     Restaurant,
     RestaurantReview,
     User,
@@ -602,3 +604,35 @@ class ManageOrder(RegularUserRequiredMixin, DetailView):
 
     def get_queryset(self):
         return super().get_queryset().filter(user=self.request.user)
+
+
+class PlaceOrderView(RegularUserRequiredMixin, CreateView):
+    model = Payment
+    fields = (
+        "payment_method",
+        "cardholder_name",
+        "billing_address",
+        "card_number",
+        "expiration_month",
+        "expiration_year",
+        "cvv",
+    )
+    template_name = "dinedashapp/place_order_form.html"
+
+    def get_context_data(self, **kwargs):
+        kwargs = super().get_context_data(**kwargs)
+        kwargs["order"] = Order.objects.get(pk=self.kwargs["order_id"])
+        return kwargs
+
+    def form_valid(self, form):
+        obj = form.save(False)
+        obj.order = order = Order.objects.get(pk=self.kwargs["order_id"])
+        obj.user = self.request.user
+        obj.amount_paid = order.total_cost = order.calc_total_cost()
+        obj.save()
+
+        order.status = Order.OrderStatus.PLACED
+        order.date_placed = datetime_now()
+        order.save()
+
+        return redirect("manage_order", pk=order.id)

@@ -17,6 +17,7 @@ from dinedashapp.views import (
     ListOfReviewsView,
     ManageOrder,
     ModifyFavoriteStatus,
+    PlaceOrderView,
     RegularAccountView,
     RegularLogInView,
     RegularRegistrationView,
@@ -112,4 +113,5 @@ urlpatterns = [
     ),
     path("order/edit/<int:pk>", EditOrderItemView.as_view(), name="edit_order_item"),
     path("order/<int:pk>", ManageOrder.as_view(), name="manage_order"),
+    path("order/<int:order_id>/place", PlaceOrderView.as_view(), name="place_order"),
 ]

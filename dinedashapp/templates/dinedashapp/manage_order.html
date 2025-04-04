@@ -10,13 +10,15 @@
     <h3>Total cost: ${{ object.calc_total_cost }}</h3>
 
     {% if object.status != "Np" %}
-    <p>Placed on {{ object.date_placed }}.</p>
+    <p>Placed on {{ object.date_placed|date:'N j, Y \a\t A' }}.</p>
+    {% elif object.items.exists %}
+    <p><a href="{% url 'place_order' object.id %}">Place order</a></p>
     {% endif %}
 
     {% if object.status == "Ip" %}
     <p>In progress.</p>
     {% elif object.status == "De" %}
-    <p>Delivered on {{ object.date_delivered }}.</p>
+    <p>Delivered on {{ object.date_delivered|date:'N j, Y \a\t A' }}.</p>
     {% endif %}
 </div>
 
