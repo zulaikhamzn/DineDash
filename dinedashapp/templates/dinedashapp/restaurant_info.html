@@ -45,6 +45,8 @@
         <p>{{ menu_item.description }}</p>
         {% if is_owner %}
         <p><a href="{% url 'edit_menu_item' menu_item.pk %}">Edit</a></p>
+        {% elif user.user_type == 'Reg' %}
+        <p><a href="{% url 'create_order_item' menu_item.pk %}">Add to order</a></p>
         {% endif %}
     </div>
     {% empty %}

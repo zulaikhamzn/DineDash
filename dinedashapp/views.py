@@ -18,6 +18,7 @@ from django.views.generic import (
 )
 
 from dinedashapp.forms import (
+    CreateOrderItemForm,
     DeliveryContractorLogInForm,
     DeliveryContractorRegistrationForm,
     RegularAccountDetailsForm,
@@ -28,7 +29,15 @@ from dinedashapp.forms import (
     RestaurantRegistrationForm,
 )
 from dinedashapp.geo import get_distance_in_miles
-from dinedashapp.models import BlogPost, MenuItem, Restaurant, RestaurantReview, User
+from dinedashapp.models import (
+    BlogPost,
+    MenuItem,
+    Order,
+    OrderItem,
+    Restaurant,
+    RestaurantReview,
+    User,
+)
 
 
 def check_authorization(user, target):
@@ -338,7 +347,10 @@ class RestaurantInfoView(DetailView):
 
         context["average_rating"] = obj.get_average_rating()
 
-        context["is_favorite"] = obj in user.customer_info.favorite_restaurants.all()
+        if user.user_type == "Reg":
+            context["is_favorite"] = (
+                obj in user.customer_info.favorite_restaurants.all()
+            )
 
         return context
 
@@ -509,3 +521,84 @@ class EditRegularAccountDetailsView(RegularUserRequiredMixin, UpdateView):
 
     def get_object(self, queryset=None):
         return self.request.user.customer_info
+
+
+class CreateOrderItemView(RegularUserRequiredMixin, CreateView):
+    model = OrderItem
+    form_class = CreateOrderItemForm
+    template_name = "dinedashapp/order_item_form.html"
+
+    def get(self, request, *args, **kwargs):
+        menu_item_id = kwargs["menu_item_id"]
+        order_item = (
+            OrderItem.objects.filter(
+                order__user=request.user,
+                menu_item_id=menu_item_id,
+                order__status=Order.OrderStatus.NOT_PLACED_YET,
+            )
+            .order_by("order__id")
+            .first()
+        )
+        if order_item:
+            return redirect("edit_order_item", pk=order_item.pk)
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        kwargs = super().get_context_data(**kwargs)
+        kwargs["menu_item"] = MenuItem.objects.get(pk=self.kwargs["menu_item_id"])
+        return kwargs
+
+    def form_valid(self, form):
+        obj = form.save(False)
+        menu_item = MenuItem.objects.get(pk=self.kwargs["menu_item_id"])
+        order, _created = Order.objects.get_or_create(
+            restaurant_id=menu_item.restaurant.id,
+            user_id=self.request.user.id,
+            status=Order.OrderStatus.NOT_PLACED_YET,
+        )
+        obj.order_id = order.id
+        obj.menu_item_id = menu_item.id
+        obj.save()
+        return redirect("manage_order", order.id)
+
+
+class EditOrderItemView(RegularUserRequiredMixin, UpdateView):
+    model = OrderItem
+    fields = ("quantity",)
+    template_name = "dinedashapp/order_item_form.html"
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                order__user=self.request.user,
+                order__status=Order.OrderStatus.NOT_PLACED_YET,
+            )
+            .order_by("order__id")
+        )
+
+    def get_context_data(self, **kwargs):
+        kwargs = super().get_context_data(**kwargs)
+        kwargs["menu_item"] = self.object.menu_item
+        kwargs["editing"] = True
+        return kwargs
+
+    def form_valid(self, form):
+        if form.cleaned_data["quantity"] == 0:
+            # pylint: disable=attribute-defined-outside-init
+            self.object = self.get_object()
+            self.object.delete()
+            return redirect(self.get_success_url())
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("manage_order", kwargs={"pk": self.object.order.id})
+
+
+class ManageOrder(RegularUserRequiredMixin, DetailView):
+    model = Order
+    template_name = "dinedashapp/manage_order.html"
+
+    def get_queryset(self):
+        return super().get_queryset().filter(user=self.request.user)

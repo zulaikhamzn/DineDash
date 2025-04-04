@@ -289,3 +289,52 @@ class DeliveryContractorInfo(models.Model):
         Return the first_name plus the last_name, with a space in between.
         """
         return f"{self.first_name} {self.last_name}".strip()
+
+
+class Order(models.Model):
+    user = models.ForeignKey(User, related_name="orders", on_delete=models.CASCADE)
+    restaurant = models.ForeignKey(
+        Restaurant, related_name="orders", on_delete=models.CASCADE
+    )
+    total_cost = models.DecimalField(max_digits=6, decimal_places=2, null=True)
+
+    class OrderStatus(models.TextChoices):
+        NOT_PLACED_YET = "Np", "Not placed yet"
+        PLACED = "Pl", "Placed"
+        IN_PROGRESS = "Ip", "In progress"
+        DELIVERED = "De", "Delivered"
+
+    status = models.CharField(
+        max_length=2, choices=OrderStatus, default=OrderStatus.NOT_PLACED_YET
+    )
+
+    date_placed = models.DateTimeField(null=True)
+    date_delivered = models.DateTimeField(null=True)
+
+    def calc_total_cost(self):
+        if self.status == Order.OrderStatus.NOT_PLACED_YET:
+            return self.items.all().aggregate(
+                total_cost=models.Sum(
+                    models.F("quantity") * models.F("menu_item__price"),
+                    output_field=models.DecimalField(max_digits=6, decimal_places=2),
+                    default=0,
+                )
+            )["total_cost"]
+        return self.total_cost
+
+
+class OrderItem(models.Model):
+    menu_item = models.ForeignKey(
+        MenuItem, related_name="orders", on_delete=models.CASCADE
+    )
+    order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField("quantity")
+
+    class Meta:
+        ordering = ["menu_item__name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("menu_item", "order"),
+                name="menu_item_can_only_appear_once_in_order",
+            )
+        ]

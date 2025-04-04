@@ -5,7 +5,13 @@ from django.core.exceptions import ValidationError
 from geopy.exc import GeopyError
 
 from dinedashapp.geo import get_coordinates
-from dinedashapp.models import CustomerInfo, DeliveryContractorInfo, Restaurant, User
+from dinedashapp.models import (
+    CustomerInfo,
+    DeliveryContractorInfo,
+    OrderItem,
+    Restaurant,
+    User,
+)
 
 
 class AbstractLogInForm(forms.Form):
@@ -301,3 +307,11 @@ class RegularAccountDetailsForm(forms.ModelForm):
         if commit:
             obj.save()
         return obj
+
+
+class CreateOrderItemForm(forms.ModelForm):
+    quantity = forms.IntegerField(min_value=1)
+
+    class Meta:
+        model = OrderItem
+        fields = ("quantity",)
