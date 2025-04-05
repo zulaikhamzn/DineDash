@@ -621,12 +621,20 @@ class PlaceOrderView(RegularUserRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         kwargs = super().get_context_data(**kwargs)
-        kwargs["order"] = Order.objects.get(pk=self.kwargs["order_id"])
+        kwargs["order"] = Order.objects.get(
+            user=self.request.user,
+            pk=self.kwargs["order_id"],
+            status=Order.OrderStatus.NOT_PLACED_YET,
+        )
         return kwargs
 
     def form_valid(self, form):
         obj = form.save(False)
-        obj.order = order = Order.objects.get(pk=self.kwargs["order_id"])
+        obj.order = order = Order.objects.get(
+            user=self.request.user,
+            pk=self.kwargs["order_id"],
+            status=Order.OrderStatus.NOT_PLACED_YET,
+        )
         obj.user = self.request.user
         obj.amount_paid = order.total_cost = order.calc_total_cost()
         obj.save()
