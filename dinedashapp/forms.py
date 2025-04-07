@@ -192,19 +192,22 @@ class RestaurantInfoForm(forms.ModelForm):
                     "If you entered an opening time for a day of the week, make sure to also specify a closing time for said day."
                 )
 
-        location = self.cleaned_data["location"]
-        if location != self.initial["location"]:
+        if (location := self.cleaned_data.get("location")) != self.initial["location"]:
             try:
-                [x, y] = get_coordinates(location)
-                self.cleaned_data["location_x_coordinate"] = x
-                self.cleaned_data["location_y_coordinate"] = y
+                match get_coordinates(location):
+                    case (x, y):
+                        self.cleaned_data["location_x_coordinate"] = x
+                        self.cleaned_data["location_y_coordinate"] = y
+                    case _:
+                        raise ValidationError("Could not find location.")
             except GeopyError as e:
                 raise ValidationError("Could not find location.") from e
 
     def save(self, commit=True):
         obj = super().save(False)
-        obj.location_x_coordinate = self.cleaned_data["location_x_coordinate"]
-        obj.location_y_coordinate = self.cleaned_data["location_y_coordinate"]
+        if self.cleaned_data.get("location") != self.initial["location"]:
+            obj.location_x_coordinate = self.cleaned_data["location_x_coordinate"]
+            obj.location_y_coordinate = self.cleaned_data["location_y_coordinate"]
         if commit:
             obj.save()
         return obj
@@ -287,23 +290,27 @@ class RegularAccountDetailsForm(forms.ModelForm):
 
     def clean(self):
         super().clean()
-        location = self.cleaned_data.get("location")
-        if location:
-            if location != self.initial["location"]:
-                try:
-                    [x, y] = get_coordinates(location)
-                    self.cleaned_data["location_x_coordinate"] = x
-                    self.cleaned_data["location_y_coordinate"] = y
-                except GeopyError as e:
-                    raise ValidationError("Could not find location.") from e
-        else:
+        location = self.cleaned_data.get("location", "").strip()
+        if location and location != self.initial["location"]:
+            try:
+                match get_coordinates(location):
+                    case (x, y):
+                        self.cleaned_data["location_x_coordinate"] = x
+                        self.cleaned_data["location_y_coordinate"] = y
+                    case _:
+                        raise ValidationError("Could not find location.")
+            except GeopyError as e:
+                raise ValidationError("Could not find location.") from e
+        # If the user leaves the location field blank.
+        elif not location:
             self.cleaned_data["location_x_coordinate"] = None
             self.cleaned_data["location_y_coordinate"] = None
 
     def save(self, commit=True):
         obj = super().save(False)
-        obj.location_x_coordinate = self.cleaned_data["location_x_coordinate"]
-        obj.location_y_coordinate = self.cleaned_data["location_y_coordinate"]
+        if self.cleaned_data.get("location", "").strip() != self.initial["location"]:
+            obj.location_x_coordinate = self.cleaned_data["location_x_coordinate"]
+            obj.location_y_coordinate = self.cleaned_data["location_y_coordinate"]
         if commit:
             obj.save()
         return obj
