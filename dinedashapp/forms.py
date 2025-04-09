@@ -77,12 +77,14 @@ class RegularUserRegistrationForm(AbstractUserCreationForm):
     location = forms.CharField(label="Your location", max_length=300, required=False)
 
     def clean(self):
-        location = self.cleaned_data.get("location", "").strip()
-        if location:
+        if location := self.cleaned_data.get("location", "").strip():
             try:
-                [x, y] = get_coordinates(location)
-                self.cleaned_data["location_x_coordinate"] = x
-                self.cleaned_data["location_y_coordinate"] = y
+                match get_coordinates(location):
+                    case [x, y]:
+                        self.cleaned_data["location_x_coordinate"] = x
+                        self.cleaned_data["location_y_coordinate"] = y
+                    case _:
+                        raise ValidationError("Could not find location.")
             except GeopyError as e:
                 raise ValidationError("Could not find location.") from e
 
@@ -111,12 +113,14 @@ class RestaurantRegistrationForm(AbstractUserCreationForm):
     location = forms.CharField(max_length=300)
 
     def clean(self):
-        location = self.cleaned_data.get("location", "").strip()
-        if location:
+        if location := self.cleaned_data.get("location", "").strip():
             try:
-                [x, y] = get_coordinates(location)
-                self.cleaned_data["location_x_coordinate"] = x
-                self.cleaned_data["location_y_coordinate"] = y
+                match get_coordinates(location):
+                    case [x, y]:
+                        self.cleaned_data["location_x_coordinate"] = x
+                        self.cleaned_data["location_y_coordinate"] = y
+                    case _:
+                        raise ValidationError("Could not find location.")
             except GeopyError as e:
                 raise ValidationError("Could not find location.") from e
         else:
