@@ -1,0 +1,25 @@
+{% extends 'dinedashapp/components/home_base.html' %}
+
+{% block title %}DineDash - Orders List{% endblock title %}
+
+{% block content %}
+<h2 class="menu-header">Pending Orders for {{ user.restaurant.name }}</h2>
+
+<div class="menu vertical">
+    {% for order in orders %}
+    <div class="menu-item">
+        <h3>Order #{{ order.id }}</h3>
+        <p><a href="{% url 'mark_as_ready_for_pickup' order.id %}">Mark as ready for pickup</a></p>
+        <ol>
+            {% for order_item in order.items.all %}
+            <li>{{ order_item.menu_item.name }} ({{ order_item.quantity }} in total)</li>
+            {% endfor %}
+        </ol>
+    </div>
+    {% empty %}
+    <div class="menu-item">
+        <em>No orders found.</em>
+    </div>
+    {% endfor %}
+</div>
+{% endblock content %}

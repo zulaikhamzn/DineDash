@@ -3,7 +3,7 @@ from functools import wraps
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.views import PasswordChangeView
 from django.core.exceptions import PermissionDenied
-from django.db.models import Avg, Q
+from django.db.models import Avg, Count, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.timezone import now as datetime_now
@@ -20,8 +20,10 @@ from django.views.generic import (
 
 from dinedashapp.forms import (
     CreateOrderItemForm,
+    DeliveryAccountDetailsForm,
     DeliveryContractorLogInForm,
     DeliveryContractorRegistrationForm,
+    OrdersWithinDistance,
     RegularAccountDetailsForm,
     RegularUserLogInForm,
     RegularUserRegistrationForm,
@@ -124,10 +126,11 @@ class RegularLogInView(AnonymousUserRequiredMixin, FormView):
         "title": "Regular Customer Log In",
         "registration_url": reverse_lazy("register_regular"),
     }
+    success_url = reverse_lazy("index")
 
     def form_valid(self, form):
         login(self.request, form.user)
-        return redirect("index")
+        return redirect(self.get_success_url())
 
 
 class RestaurantLogInView(RegularLogInView):
@@ -148,6 +151,7 @@ class DeliveryLogInView(RegularLogInView):
         "title": "Delivery Contractor Log In",
         "registration_url": reverse_lazy("register_delivery"),
     }
+    success_url = reverse_lazy("delivery_orders")
 
 
 class RegularRegistrationView(AnonymousUserRequiredMixin, FormView):
@@ -205,7 +209,7 @@ class DeliveryRegistrationView(RegularRegistrationView):
         user = authenticate(email=email, password=password)
 
         login(self.request, user)
-        return redirect("index")
+        return redirect("delivery_orders")
 
 
 def log_out(request):
@@ -354,6 +358,15 @@ class RestaurantInfoView(DetailView):
                 obj in user.customer_info.favorite_restaurants.all()
             )
 
+            if (
+                order := user.orders.annotate(order_item_count=Count("items"))
+                .filter(status=Order.OrderStatus.NOT_PLACED_YET, order_item_count__gt=0)
+                .first()
+            ):
+                context["url_for_order"] = reverse(
+                    "manage_order", kwargs={"pk": order.id}
+                )
+
         return context
 
 
@@ -483,7 +496,7 @@ def get_url_after_change(user):
         case "Res":
             return reverse("restaurant_info", kwargs={"pk": user.restaurant.pk})
         case "Del":
-            return reverse("index")
+            return reverse("delivery_orders")
 
 
 class ChangeEmailView(AuthenticationRequiredMixin, UpdateView):
@@ -518,11 +531,20 @@ class RegularAccountView(RegularUserRequiredMixin, TemplateView):
 
 class EditRegularAccountDetailsView(RegularUserRequiredMixin, UpdateView):
     form_class = RegularAccountDetailsForm
-    template_name = "dinedashapp/edit_regular_account_details.html"
+    template_name = "dinedashapp/edit_account_details.html"
     success_url = reverse_lazy("regular_account")
 
     def get_object(self, queryset=None):
         return self.request.user.customer_info
+
+
+class EditDeliveryAccountDetailsView(DeliveryUserRequiredMixin, UpdateView):
+    form_class = DeliveryAccountDetailsForm
+    template_name = "dinedashapp/edit_account_details.html"
+    success_url = reverse_lazy("delivery_orders")
+
+    def get_object(self, queryset=None):
+        return self.request.user.delivery_contractor_info
 
 
 class CreateOrderItemView(RegularUserRequiredMixin, CreateView):
@@ -619,6 +641,12 @@ class PlaceOrderView(RegularUserRequiredMixin, CreateView):
     )
     template_name = "dinedashapp/place_order_form.html"
 
+    def dispatch(self, *args, **kwargs):
+        user = self.request.user
+        if user.user_type == "Reg" and user.customer_info.location:
+            return super().dispatch(*args, **kwargs)
+        raise PermissionDenied()
+
     def get_context_data(self, **kwargs):
         kwargs = super().get_context_data(**kwargs)
         kwargs["order"] = Order.objects.get(
@@ -644,3 +672,126 @@ class PlaceOrderView(RegularUserRequiredMixin, CreateView):
         order.save()
 
         return redirect("manage_order", pk=order.id)
+
+
+class RestaurantOrdersList(RestaurantUserRequiredMixin, ListView):
+    template_name = "dinedashapp/restaurant_orders_list.html"
+    context_object_name = "orders"
+
+    def get_queryset(self):
+        return Order.objects.filter(
+            restaurant=self.request.user.restaurant, status=Order.OrderStatus.PLACED
+        )
+
+
+class DeliveryOrdersList(DeliveryUserRequiredMixin, ListView):
+    template_name = "dinedashapp/delivery_orders_list.html"
+    context_object_name = "orders"
+
+    def get_queryset(self):
+        user = self.request.user.delivery_contractor_info
+        status_queried = self.request.GET.get("status")
+
+        if status_queried == "accepted":
+            orders = user.accepted_orders.filter(status=Order.OrderStatus.IN_TRANSIT)
+        else:
+            orders = Order.objects.filter(
+                status=Order.OrderStatus.READY_FOR_PICKUP
+            ).exclude(id__in=user.rejected_orders.all())
+
+        orders = orders.values(
+            "id",
+            "restaurant__location",
+            "restaurant__location_x_coordinate",
+            "restaurant__location_y_coordinate",
+            "user__customer_info__location",
+            "user__customer_info__location_x_coordinate",
+            "user__customer_info__location_y_coordinate",
+        )
+
+        delivery_user_coordinates = (
+            user.location_x_coordinate,
+            user.location_y_coordinate,
+        )
+
+        orders = map(
+            lambda o: o
+            | {
+                "restaurant_distance_away": get_distance_in_miles(
+                    (
+                        o["restaurant__location_x_coordinate"],
+                        o["restaurant__location_y_coordinate"],
+                    ),
+                    delivery_user_coordinates,
+                ),
+                "user_distance_away": get_distance_in_miles(
+                    (
+                        o["user__customer_info__location_x_coordinate"],
+                        o["user__customer_info__location_y_coordinate"],
+                    ),
+                    delivery_user_coordinates,
+                ),
+            },
+            orders,
+        )
+
+        if status_queried == "accepted":
+            return orders
+
+        form = OrdersWithinDistance(
+            {"max_distance": self.request.GET.get("max_distance", 5)}
+        )
+        max_distance = form.cleaned_data["max_distance"] if form.is_valid() else 5
+        return filter(
+            lambda o: o["restaurant_distance_away"] <= max_distance
+            and o["user_distance_away"] <= max_distance,
+            orders,
+        )
+
+    def get_context_data(self, **kwargs):
+        kwargs = super().get_context_data(**kwargs)
+        kwargs["status_queried"] = self.request.GET.get("status", "")
+        kwargs["form"] = form = OrdersWithinDistance(
+            {"max_distance": self.request.GET.get("max_distance", 5)}
+        )
+        kwargs["max_distance"] = (
+            form.cleaned_data["max_distance"] if form.is_valid() else 5
+        )
+        return kwargs
+
+
+@deny_if_not_target("Res")
+def mark_as_ready_for_pickup(request, order_id):
+    order = Order.objects.get(
+        pk=order_id, restaurant=request.user.restaurant, status=Order.OrderStatus.PLACED
+    )
+    order.status = Order.OrderStatus.READY_FOR_PICKUP
+    order.save()
+    return redirect("restaurant_orders")
+
+
+@deny_if_not_target("Del")
+def update_delivery_status(request, order_id, status):
+    user = request.user.delivery_contractor_info
+
+    match status:
+        case "accept":
+            order = Order.objects.get(
+                pk=order_id,
+                status=Order.OrderStatus.READY_FOR_PICKUP,
+                accepted_by__isnull=True,
+            )
+            order.accepted_by = user
+            order.status = Order.OrderStatus.IN_TRANSIT
+            order.save()
+        case "reject":
+            order = Order.objects.exclude(accepted_by=user).get(pk=order_id)
+            order.rejected_by.add(user)
+            return redirect("delivery_orders")
+        case "delivered":
+            order = Order.objects.get(pk=order_id, status=Order.OrderStatus.IN_TRANSIT)
+            order.status = Order.OrderStatus.DELIVERED
+            order.date_delivered = datetime_now()
+            order.save()
+
+    return redirect(reverse("delivery_orders") + "?status=accepted")

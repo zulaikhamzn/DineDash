@@ -294,6 +294,10 @@ class DeliveryContractorInfo(models.Model):
         """
         return f"{self.first_name} {self.last_name}".strip()
 
+    location = models.CharField("location", max_length=300)
+    location_x_coordinate = models.DecimalField(max_digits=9, decimal_places=6)
+    location_y_coordinate = models.DecimalField(max_digits=9, decimal_places=6)
+
 
 class Order(models.Model):
     user = models.ForeignKey(User, related_name="orders", on_delete=models.CASCADE)
@@ -305,7 +309,8 @@ class Order(models.Model):
     class OrderStatus(models.TextChoices):
         NOT_PLACED_YET = "Np", "Not placed yet"
         PLACED = "Pl", "Placed"
-        IN_PROGRESS = "Ip", "In progress"
+        READY_FOR_PICKUP = "Rp", "Ready to be picked up for delivery"
+        IN_TRANSIT = "It", "In transit"
         DELIVERED = "De", "Delivered"
 
     status = models.CharField(
@@ -325,6 +330,19 @@ class Order(models.Model):
                 )
             )["total_cost"]
         return self.total_cost
+
+    class Meta:
+        ordering = ["date_placed", "id"]
+
+    accepted_by = models.ForeignKey(
+        DeliveryContractorInfo,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="accepted_orders",
+    )
+    rejected_by = models.ManyToManyField(
+        DeliveryContractorInfo, related_name="rejected_orders"
+    )
 
 
 class OrderItem(models.Model):

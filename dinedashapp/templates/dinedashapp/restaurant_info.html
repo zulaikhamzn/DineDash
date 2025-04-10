@@ -10,6 +10,7 @@
     <div class="menu-item">
         {% if is_owner %}
         <p><a href="{% url 'edit_restaurant_info' %}">Edit</a></p>
+        <p><a href="{% url 'restaurant_orders' %}">View orders</a></p>
         {% elif user.user_type == "Reg" %}
         {% if is_favorite %}
         <p><a href="{% url 'modify_favorite_status' restaurant.pk 0 %}">Remove from favorites</a></p>
@@ -32,6 +33,9 @@
         <p>This restaurant has not received any reviews yet.</p>
         {% endif %}
         <p>Click <a href="{% url 'restaurant_reviews' restaurant.id %}">here</a> to see reviews.</p>
+        {% if url_for_order %}
+        <p>You have an order that you haven't placed yet. Click <a href="{{ url_for_order }}">here</a> to manage it.</p>
+        {% endif %}
     </div>
 </div>
 <div class="menu vertical">

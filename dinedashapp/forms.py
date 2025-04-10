@@ -148,6 +148,21 @@ class DeliveryContractorRegistrationForm(AbstractUserCreationForm):
     user_type = "Del"
     first_name = forms.CharField(max_length=150)
     last_name = forms.CharField(max_length=150)
+    location = forms.CharField(max_length=300)
+
+    def clean(self):
+        if location := self.cleaned_data.get("location", "").strip():
+            try:
+                match get_coordinates(location):
+                    case [x, y]:
+                        self.cleaned_data["location_x_coordinate"] = x
+                        self.cleaned_data["location_y_coordinate"] = y
+                    case _:
+                        raise ValidationError("Could not find location.")
+            except GeopyError as e:
+                raise ValidationError("Could not find location.") from e
+        else:
+            raise ValidationError("You need to include a valid location.")
 
     def save(self, commit=True):
         user = super().save(commit)
@@ -156,6 +171,13 @@ class DeliveryContractorRegistrationForm(AbstractUserCreationForm):
                 user=user,
                 first_name=self.cleaned_data["first_name"],
                 last_name=self.cleaned_data["last_name"],
+                location=(location := self.cleaned_data["location"]),
+                location_x_coordinate=(
+                    self.cleaned_data["location_x_coordinate"] if location else None
+                ),
+                location_y_coordinate=(
+                    self.cleaned_data["location_y_coordinate"] if location else None
+                ),
             )
         return user
 
@@ -320,9 +342,42 @@ class RegularAccountDetailsForm(forms.ModelForm):
         return obj
 
 
+class DeliveryAccountDetailsForm(forms.ModelForm):
+    class Meta:
+        model = DeliveryContractorInfo
+        fields = ("first_name", "last_name", "location")
+
+    def clean(self):
+        super().clean()
+
+        if (location := self.cleaned_data.get("location")) != self.initial["location"]:
+            try:
+                match get_coordinates(location):
+                    case (x, y):
+                        self.cleaned_data["location_x_coordinate"] = x
+                        self.cleaned_data["location_y_coordinate"] = y
+                    case _:
+                        raise ValidationError("Could not find location.")
+            except GeopyError as e:
+                raise ValidationError("Could not find location.") from e
+
+    def save(self, commit=True):
+        obj = super().save(False)
+        if self.cleaned_data.get("location") != self.initial["location"]:
+            obj.location_x_coordinate = self.cleaned_data["location_x_coordinate"]
+            obj.location_y_coordinate = self.cleaned_data["location_y_coordinate"]
+        if commit:
+            obj.save()
+        return obj
+
+
 class CreateOrderItemForm(forms.ModelForm):
     quantity = forms.IntegerField(min_value=1)
 
     class Meta:
         model = OrderItem
         fields = ("quantity",)
+
+
+class OrdersWithinDistance(forms.Form):
+    max_distance = forms.IntegerField(label="Maximum distance (in miles)", min_value=1)

@@ -8,7 +8,9 @@ from dinedashapp.views import (
     CreateReviewView,
     DeleteReviewView,
     DeliveryLogInView,
+    DeliveryOrdersList,
     DeliveryRegistrationView,
+    EditDeliveryAccountDetailsView,
     EditMenuItemView,
     EditOrderItemView,
     EditRegularAccountDetailsView,
@@ -23,6 +25,7 @@ from dinedashapp.views import (
     RegularRegistrationView,
     RestaurantInfoView,
     RestaurantLogInView,
+    RestaurantOrdersList,
     RestaurantRegistrationView,
     RestaurantSearchView,
     about_us,
@@ -31,6 +34,8 @@ from dinedashapp.views import (
     index,
     log_in_question,
     log_out,
+    mark_as_ready_for_pickup,
+    update_delivery_status,
 )
 
 urlpatterns = [
@@ -107,6 +112,11 @@ urlpatterns = [
         name="edit_regular_account",
     ),
     path(
+        "delivery_account/edit",
+        EditDeliveryAccountDetailsView.as_view(),
+        name="edit_delivery_account",
+    ),
+    path(
         "order/add/<int:menu_item_id>",
         CreateOrderItemView.as_view(),
         name="create_order_item",
@@ -114,4 +124,16 @@ urlpatterns = [
     path("order/edit/<int:pk>", EditOrderItemView.as_view(), name="edit_order_item"),
     path("order/<int:pk>", ManageOrder.as_view(), name="manage_order"),
     path("order/<int:order_id>/place", PlaceOrderView.as_view(), name="place_order"),
+    path("orders/restaurant", RestaurantOrdersList.as_view(), name="restaurant_orders"),
+    path("orders/delivery", DeliveryOrdersList.as_view(), name="delivery_orders"),
+    path(
+        "order/<int:order_id>/ready_for_pickup",
+        mark_as_ready_for_pickup,
+        name="mark_as_ready_for_pickup",
+    ),
+    path(
+        "order/<int:order_id>/update_status/<status>",
+        update_delivery_status,
+        name="update_delivery_status",
+    ),
 ]

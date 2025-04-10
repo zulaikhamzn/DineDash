@@ -175,7 +175,8 @@
                         {{ user.restaurant.name }}
                     </a>
                     {% else %}
-                    Signed in as {{ user.delivery_contractor_info.get_full_name }}
+                    Signed in as <a href="{% url 'delivery_orders' %}">
+                        {{ user.delivery_contractor_info.get_full_name }}</a>
                     {% endif %}
                 </p>
                 <a href="{% url 'log_out' %}" class=orange-button>Log out</a>

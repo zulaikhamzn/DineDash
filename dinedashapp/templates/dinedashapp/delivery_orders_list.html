@@ -1,0 +1,47 @@
+{% extends 'dinedashapp/components/home_base.html' %}
+
+{% block title %}DineDash - Orders{% endblock title %}
+
+{% block content %}
+<h2 class="menu-header">Hello, {{ user.delivery_contractor_info.first_name }}</h2>
+<div class="menu vertical">
+    <p>Click <a href="{% url 'edit_delivery_account' %}">here</a> to edit your account information.</p>
+
+    {% if status_queried == "accepted" %}
+    <p>You are viewing orders that you already accepted and have not delivered yet. Click <a
+            href="{% url 'delivery_orders' %}">here</a> to view orders that haven't been accepted by anyone
+        yet.
+    </p>
+    {% else %}
+    <p>You are viewing orders within {{ max_distance }} miles of your location.
+        Click <a href="{% url 'edit_delivery_account' %}">here</a> to change your location, or click <a
+            href="{% url 'delivery_orders' %}?status=accepted">here</a> to view the orders that you have to deliver.
+
+    <form>
+        {{ form.as_p }}
+        <input class="btn btn-primary" type="submit" value="Submit">
+    </form>
+    </p>
+</div>
+{% endif %}
+
+<div class="menu vertical">
+    {% for order in orders %}
+    <div class="menu-item">
+        <h3>Order #{{ order.id }}</h3>
+        <p>From {{ order.restaurant__location }} ({{ order.restaurant_distance_away|floatformat:2 }} miles away)</p>
+        <p>To {{ order.user__customer_info__location }} ({{ order.user_distance_away|floatformat:2 }} miles away)</p>
+        {% if status_queried == 'accepted' %}
+        <p><a href="{% url 'update_delivery_status' order.id 'delivered' %}">Mark as delivered</a></p>
+        {% else %}
+        <p><a href="{% url 'update_delivery_status' order.id 'accept' %}">Accept</a></p>
+        <p><a href="{% url 'update_delivery_status' order.id 'reject' %}">Reject</a></p>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="menu-item">
+        <em>No orders found.</em>
+    </div>
+    {% endfor %}
+</div>
+{% endblock content %}

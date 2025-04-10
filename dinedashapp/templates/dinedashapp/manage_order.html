@@ -12,12 +12,17 @@
     {% if object.status != "Np" %}
     <p>Placed on {{ object.date_placed|date:'N j, Y \a\t A' }}.</p>
     {% elif object.items.exists %}
+
+    {% if user.customer_info.location %}
     <p><a href="{% url 'place_order' object.id %}">Place order</a></p>
+    {% else %}
+    <p>You must set your location to place an order. Click <a href="{% url 'edit_regular_account' %}">here</a> to edit
+        your account information.</p>
     {% endif %}
 
-    {% if object.status == "Ip" %}
-    <p>In progress.</p>
-    {% elif object.status == "De" %}
+    {% endif %}
+
+    {% if object.status == "De" %}
     <p>Delivered on {{ object.date_delivered|date:'N j, Y \a\t A' }}.</p>
     {% endif %}
 </div>
