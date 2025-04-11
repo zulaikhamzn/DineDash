@@ -353,7 +353,7 @@ class RestaurantInfoView(DetailView):
 
         context["average_rating"] = obj.get_average_rating()
 
-        if user.user_type == "Reg":
+        if user.is_authenticated and user.user_type == "Reg":
             context["is_favorite"] = (
                 obj in user.customer_info.favorite_restaurants.all()
             )
