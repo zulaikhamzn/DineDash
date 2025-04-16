@@ -1,0 +1,44 @@
+{% extends 'dinedashapp/components/home_base.html' %}
+
+{% block title %}DineDash - Orders{% endblock title %}
+
+{% block content %}
+<h2 class="menu-header">Hello, {{ user.customer_info.first_name }}</h2>
+<div class="menu vertical">
+    <form>
+        {% if filter %}
+        <p>Filtering by orders that were {{ filter }}</p>
+        {% else %}
+        <p>Showing all orders.</p>
+        {% endif %}
+        {{ form.as_p }}
+        <input class="btn btn-primary" type="submit" value="Filter">
+        {% if filter %}
+        <a href="{% url 'regular_customers_orders' %}"><button type="button">Show all</button></a>
+        {% endif %}
+    </form>
+    </p>
+</div>
+
+<div class="menu vertical">
+    {% for order in orders %}
+    <div class="menu-item">
+        <h3>Order #{{ order.id }}</h3>
+        <p>From: {{ order.restaurant.name }} ({{ order.restaurant.location }})</p>
+        <p>Status: {{ order.get_status_display }}</p>
+
+        {% if order.status != "Np" %}
+        <p>Placed on {{ order.date_placed|date:'N j, Y \a\t A' }}.</p>
+        {% endif %}
+
+        {% if order.status == "De" %}
+        <p>Delivered on {{ order.date_delivered|date:'N j, Y \a\t A' }}.</p>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="menu-item">
+        <em>No orders found.</em>
+    </div>
+    {% endfor %}
+</div>
+{% endblock content %}

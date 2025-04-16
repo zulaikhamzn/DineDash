@@ -35,6 +35,7 @@ from dinedashapp.views import (
     log_in_question,
     log_out,
     mark_as_ready_for_pickup,
+    regular_customer_orders_list,
     update_delivery_status,
 )
 
@@ -135,5 +136,8 @@ urlpatterns = [
         "order/<int:order_id>/update_status/<status>",
         update_delivery_status,
         name="update_delivery_status",
+    ),
+    path(
+        "orders/regular", regular_customer_orders_list, name="regular_customers_orders"
     ),
 ]

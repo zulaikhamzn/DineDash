@@ -8,6 +8,7 @@ from dinedashapp.geo import get_coordinates
 from dinedashapp.models import (
     CustomerInfo,
     DeliveryContractorInfo,
+    Order,
     OrderItem,
     Restaurant,
     User,
@@ -379,5 +380,11 @@ class CreateOrderItemForm(forms.ModelForm):
         fields = ("quantity",)
 
 
-class OrdersWithinDistance(forms.Form):
+class OrdersWithinDistanceForm(forms.Form):
     max_distance = forms.IntegerField(label="Maximum distance (in miles)", min_value=1)
+
+
+class OrdersWithStatusForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = ("status",)

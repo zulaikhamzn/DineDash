@@ -23,7 +23,8 @@ from dinedashapp.forms import (
     DeliveryAccountDetailsForm,
     DeliveryContractorLogInForm,
     DeliveryContractorRegistrationForm,
-    OrdersWithinDistance,
+    OrdersWithinDistanceForm,
+    OrdersWithStatusForm,
     RegularAccountDetailsForm,
     RegularUserLogInForm,
     RegularUserRegistrationForm,
@@ -56,7 +57,6 @@ def deny_if_not_target(target):
         def wrapper(request, *args, **kwargs):
             if check_authorization(request.user, target):
                 return func(request, *args, **kwargs)
-
             raise PermissionDenied()
 
         return wrapper
@@ -738,7 +738,7 @@ class DeliveryOrdersList(DeliveryUserRequiredMixin, ListView):
         if status_queried == "accepted":
             return orders
 
-        form = OrdersWithinDistance(
+        form = OrdersWithinDistanceForm(
             {"max_distance": self.request.GET.get("max_distance", 5)}
         )
         max_distance = form.cleaned_data["max_distance"] if form.is_valid() else 5
@@ -751,7 +751,7 @@ class DeliveryOrdersList(DeliveryUserRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         kwargs = super().get_context_data(**kwargs)
         kwargs["status_queried"] = self.request.GET.get("status", "")
-        kwargs["form"] = form = OrdersWithinDistance(
+        kwargs["form"] = form = OrdersWithinDistanceForm(
             {"max_distance": self.request.GET.get("max_distance", 5)}
         )
         kwargs["max_distance"] = (
@@ -795,3 +795,22 @@ def update_delivery_status(request, order_id, status):
             order.save()
 
     return redirect(reverse("delivery_orders") + "?status=accepted")
+
+
+@deny_if_not_target("Reg")
+def regular_customer_orders_list(request):
+    orders = Order.objects.filter(user=request.user).order_by("-date_placed", "-id")
+    status_queried = request.GET.get("status")
+    the_filter = None
+    if status_queried:
+        form = OrdersWithStatusForm(data={"status": status_queried})
+        if form.is_valid():
+            the_filter = Order.OrderStatus(status_queried).label.lower()
+            orders = orders.filter(status=form.cleaned_data["status"])
+    else:
+        form = OrdersWithStatusForm()
+    return render(
+        request,
+        "dinedashapp/regular_customer_orders_list.html",
+        {"orders": orders, "form": form, "filter": the_filter},
+    )
