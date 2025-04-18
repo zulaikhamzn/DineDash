@@ -799,7 +799,11 @@ def update_delivery_status(request, order_id, status):
 
 @deny_if_not_target("Reg")
 def regular_customer_orders_list(request):
-    orders = Order.objects.filter(user=request.user).order_by("-date_placed", "-id")
+    orders = (
+        Order.objects.filter(user=request.user)
+        .exclude(status=Order.OrderStatus.NOT_PLACED_YET)
+        .order_by("-date_placed", "-id")
+    )
     status_queried = request.GET.get("status")
     the_filter = None
     if status_queried:

@@ -7,12 +7,13 @@
 <div class="menu vertical">
     <form>
         {% if filter %}
-        <p>Filtering by orders that were {{ filter }}</p>
+        <p>Filtering by orders that were {{ filter }}.</p>
         {% else %}
-        <p>Showing all orders.</p>
+        <p>Showing all orders that have been placed. You can filter by the status of the orders using the form below.
+        </p>
         {% endif %}
         {{ form.as_p }}
-        <input class="btn btn-primary" type="submit" value="Filter">
+        <input class="btn btn-primary" type="submit" value="Filter by status">
         {% if filter %}
         <a href="{% url 'regular_customers_orders' %}"><button type="button">Show all</button></a>
         {% endif %}
@@ -20,7 +21,8 @@
     </p>
 </div>
 
-<div class="menu vertical">
+<div class="menu vertical" id="actual-orders-list" hx-get="" hx-select="#actual-orders-list" hx-swap="outerHTML"
+    hx-trigger="every 5s">
     {% for order in orders %}
     <div class="menu-item">
         <h3>Order #{{ order.id }}</h3>

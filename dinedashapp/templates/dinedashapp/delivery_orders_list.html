@@ -25,7 +25,16 @@
 </div>
 {% endif %}
 
-<div class="menu vertical">
+{% comment %}
+I think it only makes sense for real-time tracking to be present
+when contractors are viewing orders they haven't accepted yet. In that
+scenario, they need to know which orders are still available and which
+ones were taken by other contractors. Real-time tracking doesn't make
+sense for the page that shows info a contractor already knows, such as
+the orders they have already accepted.
+{% endcomment %}
+<div class="menu vertical" {% if not status_queried %} id="actual-orders-list" hx-get="" hx-select="#actual-orders-list"
+    hx-swap="outerHTML" hx-trigger="every 5s" {% endif %}>
     {% for order in orders %}
     <div class="menu-item">
         <h3>Order #{{ order.id }}</h3>

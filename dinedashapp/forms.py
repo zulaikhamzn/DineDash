@@ -384,7 +384,14 @@ class OrdersWithinDistanceForm(forms.Form):
     max_distance = forms.IntegerField(label="Maximum distance (in miles)", min_value=1)
 
 
-class OrdersWithStatusForm(forms.ModelForm):
-    class Meta:
-        model = Order
-        fields = ("status",)
+class OrdersWithStatusForm(forms.Form):
+    status = forms.TypedChoiceField(
+        choices=(
+            ("Pl", "Placed"),
+            ("Rp", "Ready to be picked up for delivery"),
+            ("It", "In transit"),
+            ("De", "Delivered"),
+        ),
+        coerce=Order.OrderStatus,
+        empty_value="------",
+    )
