@@ -8,7 +8,6 @@ from dinedashapp.views import (
     CreateReviewView,
     DeleteReviewView,
     DeliveryLogInView,
-    DeliveryOrdersList,
     DeliveryRegistrationView,
     EditDeliveryAccountDetailsView,
     EditMenuItemView,
@@ -25,18 +24,17 @@ from dinedashapp.views import (
     RegularRegistrationView,
     RestaurantInfoView,
     RestaurantLogInView,
-    RestaurantOrdersList,
     RestaurantRegistrationView,
     RestaurantSearchView,
     about_us,
     blog,
     contact_us,
+    delivery_orders_list,
     index,
     log_in_question,
     log_out,
-    mark_as_ready_for_pickup,
     regular_customer_orders_list,
-    update_delivery_status,
+    restaurant_orders_list,
 )
 
 urlpatterns = [
@@ -125,18 +123,8 @@ urlpatterns = [
     path("order/edit/<int:pk>", EditOrderItemView.as_view(), name="edit_order_item"),
     path("order/<int:pk>", ManageOrder.as_view(), name="manage_order"),
     path("order/<int:order_id>/place", PlaceOrderView.as_view(), name="place_order"),
-    path("orders/restaurant", RestaurantOrdersList.as_view(), name="restaurant_orders"),
-    path("orders/delivery", DeliveryOrdersList.as_view(), name="delivery_orders"),
-    path(
-        "order/<int:order_id>/ready_for_pickup",
-        mark_as_ready_for_pickup,
-        name="mark_as_ready_for_pickup",
-    ),
-    path(
-        "order/<int:order_id>/update_status/<status>",
-        update_delivery_status,
-        name="update_delivery_status",
-    ),
+    path("orders/restaurant", restaurant_orders_list, name="restaurant_orders"),
+    path("orders/delivery", delivery_orders_list, name="delivery_orders"),
     path(
         "orders/regular", regular_customer_orders_list, name="regular_customers_orders"
     ),

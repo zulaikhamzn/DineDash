@@ -25,27 +25,31 @@
 </div>
 {% endif %}
 
-{% comment %}
-I think it only makes sense for real-time tracking to be present
-when contractors are viewing orders they haven't accepted yet. In that
-scenario, they need to know which orders are still available and which
-ones were taken by other contractors. Real-time tracking doesn't make
-sense for the page that shows info a contractor already knows, such as
-the orders they have already accepted.
-{% endcomment %}
-<div class="menu vertical" {% if not status_queried %} id="actual-orders-list" hx-get="" hx-select="#actual-orders-list"
-    hx-swap="outerHTML" hx-trigger="every 5s" {% endif %}>
+<div class="menu vertical" id="actual-orders-list" hx-get="" hx-select="#actual-orders-list" hx-swap="outerHTML"
+    hx-trigger="every 5s">
     {% for order in orders %}
     <div class="menu-item">
         <h3>Order #{{ order.id }}</h3>
         <p>From {{ order.restaurant__location }} ({{ order.restaurant_distance_away|floatformat:2 }} miles away)</p>
         <p>To {{ order.user__customer_info__location }} ({{ order.user_distance_away|floatformat:2 }} miles away)</p>
-        {% if status_queried == 'accepted' %}
-        <p><a href="{% url 'update_delivery_status' order.id 'delivered' %}">Mark as delivered</a></p>
-        {% else %}
-        <p><a href="{% url 'update_delivery_status' order.id 'accept' %}">Accept</a></p>
-        <p><a href="{% url 'update_delivery_status' order.id 'reject' %}">Reject</a></p>
-        {% endif %}
+
+        <form hx-post="{% url 'delivery_orders' %}" hx-target="#actual-orders-list">
+            <input type="hidden" name="order_id" value="{{ order.id }}">
+            <input type="hidden" name="max_distance" value="{{ max_distance }}">
+            {% if status_queried == 'accepted' %}
+            <div>
+                <label for="minutes-away-field-{{ order.id }}">Minutes away (optional)</label>
+                <input id="minutes-away-field-{{ order.id }}" type="number" min="0" name="minutes_away"
+                    value="{{ order.minutes_away }}">
+                <button name="action" value="set_minutes_away">Set minutes
+                    away</button>
+            </div>
+            <button name="action" value="mark_as_delivered">Mark as delivered</button>
+            {% else %}
+            <button name="action" value="accept">Accept</button>
+            <button name="action" value="reject">Reject</button>
+            {% endif %}
+        </form>
     </div>
     {% empty %}
     <div class="menu-item">

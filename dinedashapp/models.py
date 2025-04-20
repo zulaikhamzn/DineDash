@@ -344,6 +344,8 @@ class Order(models.Model):
         DeliveryContractorInfo, related_name="rejected_orders"
     )
 
+    minutes_away = models.PositiveIntegerField(null=True)
+
 
 class OrderItem(models.Model):
     menu_item = models.ForeignKey(
