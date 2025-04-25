@@ -576,7 +576,7 @@ class ModifyReservationForm(forms.ModelForm):
 
         reservation = self.instance
 
-        queryset = (
+        self.fields["table"].queryset = (
             Table.objects.filter(
                 restaurant=reservation.restaurant,
                 capacity__gte=reservation.number_of_guests,
@@ -586,10 +586,8 @@ class ModifyReservationForm(forms.ModelForm):
             # reservation is not included in the exclusion, thus allowing its table
             # (if it already has a table associated with it) to be one of the choices.
             .exclude(
-                ~Q(id=reservation.id),
+                ~Q(reservations__id=reservation.id),
                 reservations__start_date__lte=reservation.end_date,
                 reservations__end_date__gte=reservation.start_date,
             )
         )
-
-        self.fields["table"].queryset = queryset
