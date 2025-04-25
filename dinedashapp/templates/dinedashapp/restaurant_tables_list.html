@@ -1,0 +1,22 @@
+{% extends 'dinedashapp/components/home_base.html' %}
+
+{% block title %}DineDash - Restaurant Tables{% endblock title %}
+
+{% block content %}
+<p class="center"><a href="{% url 'create_restaurant_table' %}">Add a table</a></p>
+
+<div class="menu vertical">
+    {% for table in tables %}
+    <div class="menu-item">
+        <h3>Table #{{ table.local_id }}</h3>
+        <p>{{ table.capacity }} seats</p>
+        <p><a href="{% url 'modify_restaurant_table' table.id %}">Edit</a></p>
+        <p><a href="{% url 'delete_restaurant_table' table.id %}">Delete</a></p>
+    </div>
+    {% empty %}
+    <div class="menu-item">
+        <p><em>This restaurant has no tables.</em></p>
+    </div>
+</div>
+{% endfor %}
+{% endblock content %}

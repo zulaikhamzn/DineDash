@@ -11,12 +11,15 @@
         {% if is_owner %}
         <p><a href="{% url 'edit_restaurant_info' %}">Edit</a></p>
         <p><a href="{% url 'restaurant_orders' %}">View orders</a></p>
+        <p><a href="{% url 'restaurant_tables' %}">View tables</a></p>
+        <p><a href="{% url 'reservations' %}">View reservations</a></p>
         {% elif user.user_type == "Reg" %}
         {% if is_favorite %}
         <p><a href="{% url 'modify_favorite_status' restaurant.pk 0 %}">Remove from favorites</a></p>
         {% else %}
         <p><a href="{% url 'modify_favorite_status' restaurant.pk 1 %}">Mark as favorite</a></p>
         {% endif %}
+        <p><a href="{% url 'create_reservation' restaurant.id %}">Create a reservation</a></p>
         {% endif %}
         <h4>Hours</h4>
         <p>Sunday: {{ sunday_hours }}</p>

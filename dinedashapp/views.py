@@ -3,6 +3,7 @@ from functools import wraps
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.views import PasswordChangeView
 from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError
 from django.db.models import Avg, Count, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
@@ -21,17 +22,21 @@ from django.views.generic import (
 
 from dinedashapp.forms import (
     CreateOrderItemForm,
+    CreateReservationForm,
     DeliveryAccountDetailsForm,
     DeliveryContractorLogInForm,
     DeliveryContractorRegistrationForm,
+    ModifyReservationForm,
     OrdersWithinDistanceForm,
     OrdersWithStatusForm,
     RegularAccountDetailsForm,
     RegularUserLogInForm,
     RegularUserRegistrationForm,
+    ReservationsFilteringForm,
     RestaurantInfoForm,
     RestaurantLogInForm,
     RestaurantRegistrationForm,
+    TableForm,
 )
 from dinedashapp.geo import get_distance_in_miles
 from dinedashapp.models import (
@@ -40,8 +45,10 @@ from dinedashapp.models import (
     Order,
     OrderItem,
     Payment,
+    Reservation,
     Restaurant,
     RestaurantReview,
+    Table,
     User,
 )
 
@@ -849,4 +856,132 @@ def regular_customer_orders_list(request):
         request,
         "dinedashapp/regular_customer_orders_list.html",
         {"orders": orders, "form": form, "filter": the_filter},
+    )
+
+
+class ListOfTablesView(RestaurantUserRequiredMixin, ListView):
+    template_name = "dinedashapp/restaurant_tables_list.html"
+    context_object_name = "tables"
+
+    def get_queryset(self):
+        return Table.objects.filter(restaurant=self.request.user.restaurant)
+
+
+class CreateTableView(RestaurantUserRequiredMixin, CreateView):
+    template_name = "dinedashapp/restaurant_table_form.html"
+    form_class = TableForm
+
+    def form_valid(self, form):
+        obj = form.save(False)
+        obj.restaurant = self.request.user.restaurant
+        try:
+            obj.save()
+            return redirect("restaurant_tables")
+        except IntegrityError as e:
+            if "UNIQUE constraint failed" in str(e):
+                form.add_error(
+                    field="local_id",
+                    error="Your restaurant has another table with that number.",
+                )
+                return self.form_invalid(form)
+            raise e
+
+
+class ModifyTableView(RestaurantUserRequiredMixin, UpdateView):
+    model = Table
+    template_name = "dinedashapp/restaurant_table_form.html"
+    form_class = TableForm
+    success_url = reverse_lazy("restaurant_tables")
+
+    def get_queryset(self):
+        return Table.objects.filter(restaurant=self.request.user.restaurant)
+
+
+class DeleteTableView(RestaurantUserRequiredMixin, DeleteView):
+    template_name = "dinedashapp/restaurant_table_confirm_delete.html"
+    success_url = reverse_lazy("restaurant_tables")
+
+    def get_queryset(self):
+        return Table.objects.filter(restaurant=self.request.user.restaurant)
+
+
+class CreateReservationView(RegularUserRequiredMixin, CreateView):
+    template_name = "dinedashapp/create_restaurant_reservation.html"
+    form_class = CreateReservationForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["restaurant"] = Restaurant.objects.get(id=self.kwargs["restaurant_id"])
+        return kwargs
+
+    def form_valid(self, form):
+        obj = form.save(False)
+        obj.user = self.request.user
+        obj.restaurant_id = self.kwargs["restaurant_id"]
+        obj.start_date = form.cleaned_data["start_date"]
+        obj.end_date = form.cleaned_data["end_date"]
+        obj.save()
+        return redirect("reservation_details", obj.id)
+
+
+class ReservationDetailsView(RegularUserRequiredMixin, DetailView):
+    template_name = "dinedashapp/reservation_details.html"
+    context_object_name = "reservation"
+
+    def get_queryset(self):
+        return Reservation.objects.filter(user=self.request.user)
+
+
+class ReservationsOfRegUserListView(RegularUserRequiredMixin, ListView):
+    template_name = "dinedashapp/regular_reservations_list.html"
+    context_object_name = "reservations"
+
+    def get_queryset(self):
+        return Reservation.objects.filter(user=self.request.user).order_by(
+            "-start_date"
+        )
+
+
+@deny_if_not_target("Res")
+def reservations_list(request):
+    reservations = Reservation.objects.filter(restaurant=request.user.restaurant)
+    filtering = "Pending"
+    if request.GET.get("status"):
+        form = ReservationsFilteringForm(request.GET)
+        if form.is_valid():
+            reservations = reservations.filter(status=form.cleaned_data["status"])
+            if date := form.cleaned_data.get("date"):
+                reservations = reservations.filter(start_date__date=date)
+            filtering = Reservation.ReservationStatus(form.cleaned_data["status"]).label
+    else:
+        form = ReservationsFilteringForm()
+        reservations = reservations.filter(
+            status=Reservation.ReservationStatus.PENDING,
+            start_date__date__gte=datetime_now().date(),
+        )
+
+    return render(
+        request,
+        "dinedashapp/restaurant_reservations_list.html",
+        {"reservations": reservations, "form": form, "filtering": filtering},
+    )
+
+
+@deny_if_not_target("Res")
+def modify_reservation(request, reservation_id):
+    reservation = Reservation.objects.get(
+        restaurant=request.user.restaurant, id=reservation_id
+    )
+    if request.method == "POST":
+        form = ModifyReservationForm(data=request.POST, instance=reservation)
+        if form.is_valid():
+            form.save()
+            return redirect(reverse("reservations") + "?status=" + reservation.status)
+    else:
+        form = ModifyReservationForm(instance=reservation)
+
+    return render(
+        request,
+        "dinedashapp/modify_restaurant_reservation.html",
+        {"form": form, "reservation": reservation},
     )

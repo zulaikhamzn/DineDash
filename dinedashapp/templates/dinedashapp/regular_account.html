@@ -6,6 +6,7 @@
 <h2 class="menu-header">Hello, {{ user.customer_info.first_name }}</h2>
 <p class="center">Click <a href="{% url 'edit_regular_account' %}">here</a> to edit your account information.</p>
 <p class="center">Click <a href="{% url 'regular_customers_orders' %}">here</a> to see your orders.</p>
+<p class="center">Click <a href="{% url 'regular_reservations' %}">here</a> to see your reservations.</p>
 
 {% if favorite_restaurants %}
 <div class="menu vertical">

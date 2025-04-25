@@ -1,0 +1,40 @@
+{% extends 'dinedashapp/components/home_base.html' %}
+
+{% block title %}DineDash - Restaurant Reservations List{% endblock title %}
+
+{% block content %}
+<h2 class="menu-header">{{ filtering }} Reservations for {{ user.restaurant.name }}</h2>
+<p class="center">You can filter the reservations using the form below.</p>
+<form class="center">
+    {{ form.as_p }}
+    <input class="btn btn-primary" type="submit" value="Submit">
+    <button type="button" onclick="clearDate()">Clear date</button>
+</form>
+
+<div class="menu vertical">
+    {% for reservation in reservations %}
+    <div class="menu-item">
+        <p>Start date: {{ reservation.start_date|date:'N j, Y \a\t g:i A' }}</p>
+        <p>End date: {{ reservation.end_date|date:'N j, Y \a\t g:i A' }}</p>
+        <p>Number of guests: {{ reservation.number_of_guests }}</p>
+        <p>Status: {{ reservation.get_status_display }}</p>
+        {% if reservation.table %}
+        <p>Table: #{{ reservation.table.local_id }}</p>
+        {% endif %}
+        <p><a href="{% url 'modify_reservation' reservation.id %}">Edit</a></p>
+    </div>
+    {% empty %}
+    <div class="menu-item">
+        <em>No reservations found.</em>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    function clearDate() {
+        ["id_date_month", "id_date_day", "id_date_year"].forEach(s =>
+            document.getElementById(s).value = ""
+        );
+    }
+</script>
+{% endblock content %}

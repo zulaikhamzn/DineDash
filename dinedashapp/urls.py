@@ -5,8 +5,11 @@ from dinedashapp.views import (
     ChangePasswordView,
     CreateMenuItemView,
     CreateOrderItemView,
+    CreateReservationView,
     CreateReviewView,
+    CreateTableView,
     DeleteReviewView,
+    DeleteTableView,
     DeliveryLogInView,
     DeliveryRegistrationView,
     EditDeliveryAccountDetailsView,
@@ -16,12 +19,16 @@ from dinedashapp.views import (
     EditRestaurantInfoView,
     EditReviewView,
     ListOfReviewsView,
+    ListOfTablesView,
     ManageOrder,
     ModifyFavoriteStatus,
+    ModifyTableView,
     PlaceOrderView,
     RegularAccountView,
     RegularLogInView,
     RegularRegistrationView,
+    ReservationDetailsView,
+    ReservationsOfRegUserListView,
     RestaurantInfoView,
     RestaurantLogInView,
     RestaurantRegistrationView,
@@ -33,7 +40,9 @@ from dinedashapp.views import (
     index,
     log_in_question,
     log_out,
+    modify_reservation,
     regular_customer_orders_list,
+    reservations_list,
     restaurant_orders_list,
 )
 
@@ -127,5 +136,34 @@ urlpatterns = [
     path("orders/delivery", delivery_orders_list, name="delivery_orders"),
     path(
         "orders/regular", regular_customer_orders_list, name="regular_customers_orders"
+    ),
+    path("tables", ListOfTablesView.as_view(), name="restaurant_tables"),
+    path("tables/create", CreateTableView.as_view(), name="create_restaurant_table"),
+    path("tables/<int:pk>", ModifyTableView.as_view(), name="modify_restaurant_table"),
+    path(
+        "tables/<int:pk>/delete",
+        DeleteTableView.as_view(),
+        name="delete_restaurant_table",
+    ),
+    path(
+        "restaurant/<int:restaurant_id>/reservation/create",
+        CreateReservationView.as_view(),
+        name="create_reservation",
+    ),
+    path(
+        "reseveration/<int:pk>",
+        ReservationDetailsView.as_view(),
+        name="reservation_details",
+    ),
+    path(
+        "reservations/regular",
+        ReservationsOfRegUserListView.as_view(),
+        name="regular_reservations",
+    ),
+    path("reservations", reservations_list, name="reservations"),
+    path(
+        "reseveration/<int:reservation_id>/edit",
+        modify_reservation,
+        name="modify_reservation",
     ),
 ]

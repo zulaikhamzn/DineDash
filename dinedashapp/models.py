@@ -386,3 +386,68 @@ class Payment(models.Model):
     )
     expiration_year = models.PositiveSmallIntegerField()
     cvv = models.CharField("CVV", max_length=4, validators=[MinLengthValidator(3)])
+
+
+class Table(models.Model):
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name="tables"
+    )
+    local_id = models.PositiveSmallIntegerField("table number")
+    capacity = models.PositiveSmallIntegerField()
+
+    class Meta:
+        ordering = ["local_id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(capacity__gt=0),
+                name="capacity_must_be_greater_than_zero",
+                violation_error_message="Capacity must be greater than zero.",
+            ),
+            models.UniqueConstraint(
+                fields=("restaurant_id", "local_id"),
+                name=("local_id_must_be_unique_for_restaurant"),
+                violation_error_message="Your restaurant has another table with that number.",
+            ),
+        ]
+
+    def get_future_reservations(self):
+        return self.reservations.filter(start_date__gte=timezone.now)
+
+
+class Reservation(models.Model):
+    table = models.ForeignKey(
+        Table, on_delete=models.SET_NULL, related_name="reservations", null=True
+    )
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name="reservations"
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="reservations"
+    )
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    number_of_guests = models.PositiveSmallIntegerField()
+
+    class ReservationStatus(models.TextChoices):
+        PENDING = "Pe", "Pending"
+        CONFIRMED = "Co", "Confirmed"
+        CANCELED = "Ca", "Canceled"
+
+    status = models.CharField(
+        max_length=2, choices=ReservationStatus, default=ReservationStatus.PENDING
+    )
+
+    class Meta:
+        ordering = ["start_date"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(number_of_guests__gt=0),
+                name="number_of_guests_must_be_greater_than_zero",
+                violation_error_message="Number of guests must be greater than zero.",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(start_date__lt=models.F("end_date")),
+                name="start_date_must_be_earlier_than_end_date",
+                violation_error_message="Start date must come before end date.",
+            ),
+        ]

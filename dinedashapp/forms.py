@@ -1,7 +1,11 @@
+from datetime import datetime, timedelta
+
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import BaseUserCreationForm
 from django.core.exceptions import ValidationError
+from django.db.models import Q
+from django.utils.timezone import now as datetime_now
 from geopy.exc import GeopyError
 
 from dinedashapp.geo import get_coordinates
@@ -10,7 +14,9 @@ from dinedashapp.models import (
     DeliveryContractorInfo,
     Order,
     OrderItem,
+    Reservation,
     Restaurant,
+    Table,
     User,
 )
 
@@ -395,3 +401,195 @@ class OrdersWithStatusForm(forms.Form):
         coerce=Order.OrderStatus,
         empty_value="------",
     )
+
+
+class TableForm(forms.ModelForm):
+    local_id = forms.IntegerField(label="Table number")
+    capacity = forms.IntegerField(label="Number of seats", min_value=1)
+
+    class Meta:
+        model = Table
+        fields = ("local_id", "capacity")
+
+
+class CreateReservationForm(forms.ModelForm):
+    class Meta:
+        model = Reservation
+        fields = ("number_of_guests",)
+
+    date = forms.DateField(widget=forms.SelectDateWidget())
+    time = forms.TimeField(
+        input_formats=("%I:%M %p",), widget=forms.TimeInput(format="%I:%M %p")
+    )
+    minutes = forms.IntegerField(min_value=1)
+
+    def __init__(self, *args, **kwargs):
+        self.restaurant: Restaurant = kwargs.pop("restaurant")
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        start_date = datetime.combine(
+            date=self.cleaned_data["date"], time=self.cleaned_data["time"]
+        )
+        end_date = start_date + timedelta(minutes=self.cleaned_data["minutes"])
+
+        errors = []
+
+        if start_date.date() < datetime_now().date():
+            errors.append("Date must be today or in the future.")
+
+        match start_date.weekday():
+            case 0:
+                if self.restaurant.open_hour_monday is None:
+                    errors.append("Restaurant is closed on Mondays.")
+                else:
+                    if start_date.time() < self.restaurant.open_hour_monday:
+                        errors.append(
+                            "Reservation should not start before the opening hour on Monday."
+                        )
+                    if (
+                        end_date.time() > self.restaurant.close_hour_monday
+                        or start_date.date() != end_date.date()
+                    ):
+                        errors.append(
+                            "Reservation should not extend past the closing hour on Monday."
+                        )
+            case 1:
+                if self.restaurant.open_hour_tuesday is None:
+                    errors.append("Restaurant is closed on Tuesdays.")
+                else:
+                    if start_date.time() < self.restaurant.open_hour_monday:
+                        errors.append(
+                            "Reservation should not start before the opening hour on Tuesday."
+                        )
+                    if (
+                        end_date.time() > self.restaurant.close_hour_monday
+                        or start_date.date() != end_date.date()
+                    ):
+                        errors.append(
+                            "Reservation should not extend past the closing hour on Tuesday."
+                        )
+            case 2:
+                if self.restaurant.open_hour_wednesday is None:
+                    errors.append("Restaurant is closed on Wednesdays.")
+                else:
+                    if start_date.time() < self.restaurant.open_hour_monday:
+                        errors.append(
+                            "Reservation should not start before the opening hour on Wednesday."
+                        )
+                    if (
+                        end_date.time() > self.restaurant.close_hour_monday
+                        or start_date.date() != end_date.date()
+                    ):
+                        errors.append(
+                            "Reservation should not extend past the closing hour on Wednesday."
+                        )
+            case 3:
+                if self.restaurant.open_hour_thursday is None:
+                    errors.append("Restaurant is closed on Thursdays.")
+                else:
+                    if start_date.time() < self.restaurant.open_hour_monday:
+                        errors.append(
+                            "Reservation should not start before the opening hour on Thursday."
+                        )
+                    if (
+                        end_date.time() > self.restaurant.close_hour_monday
+                        or start_date.date() != end_date.date()
+                    ):
+                        errors.append(
+                            "Reservation should not extend past the closing hour on Thursday."
+                        )
+            case 4:
+                if self.restaurant.open_hour_friday is None:
+                    errors.append("Restaurant is closed on Fridays.")
+                else:
+                    if start_date.time() < self.restaurant.open_hour_monday:
+                        errors.append(
+                            "Reservation should not start before the opening hour on Friday."
+                        )
+                    if (
+                        end_date.time() > self.restaurant.close_hour_monday
+                        or start_date.date() != end_date.date()
+                    ):
+                        errors.append(
+                            "Reservation should not extend past the closing hour on Friday."
+                        )
+            case 5:
+                if self.restaurant.open_hour_saturday is None:
+                    errors.append("Restaurant is closed on Saturdays.")
+                else:
+                    if start_date.time() < self.restaurant.open_hour_monday:
+                        errors.append(
+                            "Reservation should not start before the opening hour on Saturday."
+                        )
+                    if (
+                        end_date.time() > self.restaurant.close_hour_monday
+                        or start_date.date() != end_date.date()
+                    ):
+                        errors.append(
+                            "Reservation should not extend past the closing hour on Saturday."
+                        )
+            case 6:
+                if self.restaurant.open_hour_sunday is None:
+                    errors.append("Restaurant is closed on Sundays.")
+                else:
+                    if start_date.time() < self.restaurant.open_hour_monday:
+                        errors.append(
+                            "Reservation should not start before the opening hour on Sunday."
+                        )
+                    if (
+                        end_date.time() > self.restaurant.close_hour_monday
+                        or start_date.date() != end_date.date()
+                    ):
+                        errors.append(
+                            "Reservation should not extend past the closing hour on Sunday."
+                        )
+
+        if errors:
+            raise ValidationError(errors)
+
+        self.cleaned_data |= {"start_date": start_date, "end_date": end_date}
+
+
+class ReservationsFilteringForm(forms.ModelForm):
+    class Meta:
+        model = Reservation
+        fields = ("status",)
+
+    date = forms.DateField(required=False, widget=forms.SelectDateWidget())
+
+
+class TableModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.local_id
+
+
+class ModifyReservationForm(forms.ModelForm):
+    class Meta:
+        model = Reservation
+        fields = ("status", "table")
+
+    table = TableModelChoiceField(required=False, queryset=None)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        reservation = self.instance
+
+        queryset = (
+            Table.objects.filter(
+                restaurant=reservation.restaurant,
+                capacity__gte=reservation.number_of_guests,
+            )
+            # Excludes all tables that have reservations whose start and end times
+            # overlap with this reservation. The tilde Q object is used so that this
+            # reservation is not included in the exclusion, thus allowing its table
+            # (if it already has a table associated with it) to be one of the choices.
+            .exclude(
+                ~Q(id=reservation.id),
+                reservations__start_date__lte=reservation.end_date,
+                reservations__end_date__gte=reservation.start_date,
+            )
+        )
+
+        self.fields["table"].queryset = queryset

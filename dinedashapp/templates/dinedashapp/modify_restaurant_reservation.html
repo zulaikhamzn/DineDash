@@ -1,0 +1,16 @@
+{% extends 'dinedashapp/components/home_base.html' %}
+
+{% block title %}DineDash - Modify Restaurant Reservation{% endblock title %}
+
+{% block content %}
+<div class="menu vertical">
+    <div class="menu-item">
+        <h3>Editing reservation #{{ reservation.id }}</h3>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input class="btn btn-primary" type="submit" value="Submit">
+        </form>
+    </div>
+</div>
+{% endblock content %}
