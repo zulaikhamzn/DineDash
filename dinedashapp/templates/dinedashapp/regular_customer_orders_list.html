@@ -27,6 +27,7 @@
     <div class="menu-item">
         <h3><a href="{% url 'manage_order' order.id %}">Order #{{ order.id }}</a></h3>
         <p>From: {{ order.restaurant.name }} ({{ order.restaurant.location }})</p>
+        <p>Total cost: ${{ order.calc_total_cost }}</p>
         <p>Status: {{ order.get_status_display }}</p>
 
         {% if order.status != "Np" %}

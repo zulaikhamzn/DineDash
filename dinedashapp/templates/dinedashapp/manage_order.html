@@ -3,28 +3,34 @@
 {% block title %}DineDash - Order{% endblock title %}
 
 {% block content %}
-<div class="menu vertical">
+<div class="menu vertical" id="actual-order-info" hx-get="" hx-select="#actual-order-info" hx-swap="outerHTML"
+    hx-trigger="every 5s">
     <h2>Order #{{ object.id }} for <a href="{% url 'restaurant_info' object.restaurant.pk %}">
             {{ object.restaurant.name }}</a></h2>
 
-    <h3>Total cost: ${{ object.calc_total_cost }}</h3>
+    <div>
+        <h3>Total cost: ${{ object.calc_total_cost }}</h3>
 
-    {% if object.status != "Np" %}
-    <p>Placed on {{ object.date_placed|date:'N j, Y \a\t g:i A' }}.</p>
-    {% elif object.items.exists %}
+        <p>Status: {{ object.get_status_display }}</p>
 
-    {% if user.customer_info.location %}
-    <p><a href="{% url 'place_order' object.id %}">Place order</a></p>
-    {% else %}
-    <p>You must set your location to place an order. Click <a href="{% url 'edit_regular_account' %}">here</a> to edit
-        your account information.</p>
-    {% endif %}
+        {% if object.status != "Np" %}
+        <p>Placed on {{ object.date_placed|date:'N j, Y \a\t g:i A' }}.</p>
+        {% elif object.items.exists %}
 
-    {% endif %}
+        {% if user.customer_info.location %}
+        <p><a href="{% url 'place_order' object.id %}">Place order</a></p>
+        {% else %}
+        <p>You must set your location to place an order. Click <a href="{% url 'edit_regular_account' %}">here</a> to
+            edit
+            your account information.</p>
+        {% endif %}
 
-    {% if object.status == "De" %}
-    <p>Delivered on {{ object.date_delivered|date:'N j, Y \a\t g:i A' }}.</p>
-    {% endif %}
+        {% endif %}
+
+        {% if object.status == "De" %}
+        <p>Delivered on {{ object.date_delivered|date:'N j, Y \a\t g:i A' }}.</p>
+        {% endif %}
+    </div>
 </div>
 
 <div class="menu vertical">
