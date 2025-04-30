@@ -410,9 +410,6 @@ class Table(models.Model):
             ),
         ]
 
-    def get_future_reservations(self):
-        return self.reservations.filter(start_date__gte=timezone.now)
-
 
 class Reservation(models.Model):
     table = models.ForeignKey(

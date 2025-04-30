@@ -3,10 +3,12 @@ from functools import wraps
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.views import PasswordChangeView
 from django.core.exceptions import PermissionDenied
+from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Avg, Count, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils.timezone import make_aware
 from django.utils.timezone import now as datetime_now
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (
@@ -918,9 +920,27 @@ class CreateReservationView(RegularUserRequiredMixin, CreateView):
         obj = form.save(False)
         obj.user = self.request.user
         obj.restaurant_id = self.kwargs["restaurant_id"]
-        obj.start_date = form.cleaned_data["start_date"]
-        obj.end_date = form.cleaned_data["end_date"]
+        obj.start_date = make_aware(form.cleaned_data["start_date"])
+        obj.end_date = make_aware(form.cleaned_data["end_date"])
         obj.save()
+
+        email_text = (
+            f"You attempted to reserve a table at {obj.restaurant.name} for {obj.start_date} "
+            f"for {form.cleaned_data['minutes']} minutes. You will be notified if "
+            f"your reservation is confirmed or cancelled.\n\nYour order number is "
+            f"#{obj.id}, and it can be accessed using the link below:\n"
+            + self.request.build_absolute_uri(
+                reverse("reservation_details", kwargs={"pk": obj.id})
+            )
+        )
+
+        send_mail(
+            "DineDash: Reservation Placed",
+            email_text,
+            None,
+            [self.request.user.email],
+        )
+
         return redirect("reservation_details", obj.id)
 
 
@@ -975,7 +995,32 @@ def modify_reservation(request, reservation_id):
     if request.method == "POST":
         form = ModifyReservationForm(data=request.POST, instance=reservation)
         if form.is_valid():
-            form.save()
+            reservation = form.save()
+
+            email_text = (
+                f"Your reservation at {reservation.restaurant.name} for {reservation.start_date} is now {reservation.get_status_display().lower()}. "
+                + (
+                    (
+                        f"Your table is #{reservation.table.local_id}."
+                        if reservation.table is not None
+                        else "Your reservation is currently not assigned to a table."
+                    )
+                    if reservation.status == Reservation.ReservationStatus.CONFIRMED
+                    else ""
+                )
+                + f"\n\nYour order number is #{reservation.id}, and it can be accessed using the link below:\n"
+                + request.build_absolute_uri(
+                    reverse("reservation_details", kwargs={"pk": reservation.id})
+                )
+            )
+
+            send_mail(
+                "DineDash: Reservation Has Been Modified",
+                email_text,
+                None,
+                [reservation.user.email],
+            )
+
             return redirect(reverse("reservations") + "?status=" + reservation.status)
     else:
         form = ModifyReservationForm(instance=reservation)

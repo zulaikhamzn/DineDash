@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "crispy_forms",
-    "crispy_bootstrap5", 
+    "crispy_bootstrap5",
 ]
 
 MIDDLEWARE = [
@@ -149,3 +149,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # This doesn't seem to do anything.
 # TIME_INPUT_FORMATS = ["%I:%M %p", "%H:%M:%S", "%H:%M:%S.%f", "%H:%M"]
+
+DEFAULT_FROM_EMAIL = "notifications@dinedash.com"
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
