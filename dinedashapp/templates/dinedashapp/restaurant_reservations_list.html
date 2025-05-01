@@ -14,6 +14,8 @@
 <div class="menu vertical">
     {% for reservation in reservations %}
     <div class="menu-item">
+        <h3>Reservation #{{ reservation.id }}</h3>
+        <p>Reserved by: {{ reservation.user.customer_info.get_full_name }}</p>
         <p>Start date: {{ reservation.start_date|date:'N j, Y \a\t g:i A' }}</p>
         <p>End date: {{ reservation.end_date|date:'N j, Y \a\t g:i A' }}</p>
         <p>Number of guests: {{ reservation.number_of_guests }}</p>

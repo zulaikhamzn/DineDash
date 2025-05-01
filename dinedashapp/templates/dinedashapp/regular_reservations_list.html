@@ -8,6 +8,12 @@
     hx-swap="outerHTML" hx-trigger="every 5s">
     {% for reservation in reservations %}
     <div class="menu-item">
+        <h3>
+            <a href="{% url 'reservation_details' reservation.id %}">
+                Reservation for {{ reservation.restaurant.name }}
+            </a>
+        </h3>
+        <p>Number: {{ reservation.id }}</p>
         <p>Start date: {{ reservation.start_date|date:'N j, Y \a\t g:i A' }}</p>
         <p>End date: {{ reservation.end_date|date:'N j, Y \a\t g:i A' }}</p>
         <p>Number of guests: {{ reservation.number_of_guests }}</p>
