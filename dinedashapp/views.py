@@ -905,6 +905,13 @@ class DeleteTableView(RestaurantUserRequiredMixin, DeleteView):
         return Table.objects.filter(restaurant=self.request.user.restaurant)
 
 
+def format_reservation_datetime(dt):
+    # I'm using string formatting so there aren't leading zeros in certain parts of the string.
+    return dt.strftime(
+        f"%A, %B {dt.day}, %Y at {dt.hour % 12 if dt.hour % 12 else 12}:%M %p"
+    )
+
+
 class CreateReservationView(RegularUserRequiredMixin, CreateView):
     template_name = "dinedashapp/create_restaurant_reservation.html"
     form_class = CreateReservationForm
@@ -923,9 +930,9 @@ class CreateReservationView(RegularUserRequiredMixin, CreateView):
         obj.save()
 
         email_text = (
-            f"You attempted to reserve a table at {obj.restaurant.name} for {obj.start_date} "
+            f"You attempted to reserve a table at {obj.restaurant.name} for {format_reservation_datetime(obj.start_date)} "
             f"for {form.cleaned_data['minutes']} minutes. You will be notified if "
-            f"your reservation is confirmed or cancelled.\n\nYour order number is "
+            f"your reservation is confirmed or cancelled.\n\nYour reservation number is "
             f"#{obj.id}, and it can be accessed using the link below:\n"
             + self.request.build_absolute_uri(
                 reverse("reservation_details", kwargs={"pk": obj.id})
@@ -996,7 +1003,7 @@ def modify_reservation(request, reservation_id):
             reservation = form.save()
 
             email_text = (
-                f"Your reservation at {reservation.restaurant.name} for {reservation.start_date} is now {reservation.get_status_display().lower()}. "
+                f"Your reservation at {reservation.restaurant.name} for {format_reservation_datetime(reservation.start_date)} is now {reservation.get_status_display().lower()}. "
                 + (
                     (
                         f"Your table is #{reservation.table.local_id}."
@@ -1006,7 +1013,7 @@ def modify_reservation(request, reservation_id):
                     if reservation.status == Reservation.ReservationStatus.CONFIRMED
                     else ""
                 )
-                + f"\n\nYour order number is #{reservation.id}, and it can be accessed using the link below:\n"
+                + f"\n\nYour reservation number is #{reservation.id}, and it can be accessed using the link below:\n"
                 + request.build_absolute_uri(
                     reverse("reservation_details", kwargs={"pk": reservation.id})
                 )
