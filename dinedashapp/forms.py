@@ -561,7 +561,7 @@ class ReservationsFilteringForm(forms.ModelForm):
 
 class TableModelChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
-        return obj.local_id
+        return f"#{obj.local_id} ({obj.capacity} seats)"
 
 
 class ModifyReservationForm(forms.ModelForm):
