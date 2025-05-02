@@ -27,7 +27,9 @@
 
         {% endif %}
 
-        {% if object.status == "De" %}
+        {% if order.status == "It" and order.minutes_away is not None %}
+        <p>{{ order.minutes_away }} minutes away.</p>
+        {% elif object.status == "De" %}
         <p>Delivered on {{ object.date_delivered|date:'N j, Y \a\t g:i A' }}.</p>
         {% endif %}
     </div>

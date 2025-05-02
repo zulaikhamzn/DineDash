@@ -34,12 +34,8 @@
         <p>Placed on {{ order.date_placed|date:'N j, Y \a\t g:i A' }}.</p>
         {% endif %}
 
-        {% if order.status == "It" %}
-        <p>In transit.
-            {% if order.minutes_away is not None %}
-            {{ order.minutes_away }} minutes away.
-            {% endif %}
-        </p>
+        {% if order.status == "It" and order.minutes_away is not None %}
+        <p>{{ order.minutes_away }} minutes away.</p>
         {% elif order.status == "De" %}
         <p>Delivered on {{ order.date_delivered|date:'N j, Y \a\t g:i A' }}.</p>
         {% endif %}

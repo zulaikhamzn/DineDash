@@ -750,9 +750,7 @@ def delivery_orders_list(request):
                 )
                 try:
                     order.minutes_away = int(request.POST.get("minutes_away", ""))
-                    print("success")
                 except ValueError:
-                    print("failed")
                     order.minutes_away = None
                 order.save()
 

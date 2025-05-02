@@ -22,11 +22,11 @@
         <input class="btn btn-primary" type="submit" value="Submit">
     </form>
     </p>
+    {% endif %}
 </div>
-{% endif %}
 
-<div class="menu vertical" id="actual-orders-list" hx-get="" hx-select="#actual-orders-list" hx-swap="outerHTML"
-    hx-trigger="every 5s">
+<div {% if not status_queried %} hx-trigger="every 5s" hx-get="" {% endif %} hx-select="#actual-orders-list"
+    hx-swap="outerHTML" class="menu vertical" id="actual-orders-list">
     {% for order in orders %}
     <div class="menu-item">
         <h3>Order #{{ order.id }}</h3>
