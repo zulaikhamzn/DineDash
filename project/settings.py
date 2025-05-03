@@ -152,4 +152,12 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 DEFAULT_FROM_EMAIL = "notifications@dinedash.com"
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+if config("USE_SMTP_FOR_EMAIL", cast=bool, default=False):
+    EMAIL_HOST = config("EMAIL_HOST", default=None)
+    EMAIL_PORT = config("EMAIL_PORT", default=None)
+    EMAIL_HOST_USER = config("EMAIL_HOST_USER", default=None)
+    EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default=None)
+    EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)
+    EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", cast=int, default=2)
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
