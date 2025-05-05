@@ -1,0 +1,31 @@
+{% extends 'dinedashapp/components/home_base.html' %}
+
+{% block title %}DineDash - Restaurant Reservations List{% endblock title %}
+
+{% block content %}
+<h2 class="menu-header">Your Reservations</h2>
+<div class="menu vertical" id="actual-reservations-list" hx-get="" hx-select="#actual-reservations-list"
+    hx-swap="outerHTML" hx-trigger="every 5s">
+    {% for reservation in reservations %}
+    <div class="menu-item">
+        <h3>
+            <a href="{% url 'reservation_details' reservation.id %}">
+                Reservation for {{ reservation.restaurant.name }}
+            </a>
+        </h3>
+        <p>Number: {{ reservation.id }}</p>
+        <p>Start date: {{ reservation.start_date|date:'N j, Y \a\t g:i A' }}</p>
+        <p>End date: {{ reservation.end_date|date:'N j, Y \a\t g:i A' }}</p>
+        <p>Number of guests: {{ reservation.number_of_guests }}</p>
+        <p>Status: {{ reservation.get_status_display }}</p>
+        {% if reservation.table %}
+        <p>Table: #{{ reservation.table.local_id }}</p>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="menu-item">
+        <em>No reservations found.</em>
+    </div>
+    {% endfor %}
+</div>
+{% endblock content %}

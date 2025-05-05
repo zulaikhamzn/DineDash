@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "crispy_forms",
-    "crispy_bootstrap5", 
+    "crispy_bootstrap5",
 ]
 
 MIDDLEWARE = [
@@ -146,3 +146,18 @@ AUTH_USER_MODEL = "dinedashapp.User"
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+# This doesn't seem to do anything.
+# TIME_INPUT_FORMATS = ["%I:%M %p", "%H:%M:%S", "%H:%M:%S.%f", "%H:%M"]
+
+DEFAULT_FROM_EMAIL = "notifications@dinedash.com"
+
+if config("USE_SMTP_FOR_EMAIL", cast=bool, default=False):
+    EMAIL_HOST = config("EMAIL_HOST", default=None)
+    EMAIL_PORT = config("EMAIL_PORT", default=None)
+    EMAIL_HOST_USER = config("EMAIL_HOST_USER", default=None)
+    EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default=None)
+    EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)
+    EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", cast=int, default=2)
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
