@@ -6,15 +6,14 @@
 {% block content %}
 <section class="hero">
     <div class="hero-text">
-        <h2>Eat Sleep And</h2>
-        <h1>Supper delicious Burger in town!</h1>
-        <p>Food is any substance consumed to provide nutritional support for an organism.</p>
+        <h1>DineDash</h1>
+        <p>Where dining meets convenience — book tables or order meals with ease.</p>
         <a href="{% url 'restaurant_search' %}"><button class="book-a-table">Book A Table</button></a>
     </div>
     <img class="hero-image" src="{% static 'dinedashapp/homepage_burger.png' %}" alt="Delicious Burger">
 </section>
 
-<div class="menu-header">Some Delicious Examples</div>
+<div class="menu-header">Here are some examples of the foods offered on our platform:</div>
 
 <section class="menu">
     {% for item in pricing_examples %}
@@ -25,7 +24,6 @@
     </div>
     {% empty %}
     <div class="menu-item">
-        <h3>{{ item.name }}</h3>
         <p><em>There are no foods at the moment.</em></p>
     </div>
     {% endfor %}
