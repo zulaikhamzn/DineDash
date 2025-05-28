@@ -8,7 +8,9 @@ Please note that DineDash was written so that it could be easily set up and test
 
 ## Recoded Demonstrations
 
-I recorded demonstrations for the three sprints that took place during this course. You can find them in the ["Demonstrations" directory](Demonstrations/)
+I recorded demonstrations for the three sprints that took place during this course. You can find them in the ["Demonstrations" directory](Demonstrations/).
+
+Please note that the home page of the web application (as it appeared in the recorded demos) contained several spelling and grammatical errors. This was because it was based on a sketch provided by another student. I fixed these issues in a recent commit.
 
 ## Installation
 
