@@ -1,3 +1,4 @@
+import io
 from functools import wraps
 
 from django.contrib.auth import authenticate, login, logout
@@ -6,6 +7,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Avg, Count, Q
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.timezone import make_aware
@@ -21,6 +23,7 @@ from django.views.generic import (
     UpdateView,
     View,
 )
+from reportlab.pdfgen import canvas
 
 from dinedashapp.forms import (
     CreateOrderItemForm,
@@ -53,6 +56,28 @@ from dinedashapp.models import (
     Table,
     User,
 )
+
+
+def generate_receipt(request, order_id):
+    try:
+        order = Order.objects.get(id=order_id)
+    except Order.DoesNotExist:
+        return HttpResponse("Order not found", status=404)
+
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer)
+
+    # Sample content
+    p.drawString(100, 800, f"Receipt - Order #{order.id}")
+    p.drawString(100, 780, f"Customer: {order.customer.username}")
+    p.drawString(100, 760, f"Amount Paid: ${order.total}")
+    p.drawString(100, 740, f"Date: {order.date}")
+
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+
+    return HttpResponse(buffer, content_type="application/pdf")
 
 
 def check_authorization(user, target):
